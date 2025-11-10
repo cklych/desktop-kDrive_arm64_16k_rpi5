@@ -4,6 +4,7 @@ using Infomaniak.kDrive.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System;
 
 using System.Diagnostics;
@@ -296,8 +297,12 @@ namespace Infomaniak.kDrive
                 appWindow.Resize(new SizeInt32(scaledWidth, scaledHeight));
             }
         }
+        public static string GetLocalizedString(string key)
+        {
+            return GetLocalizedString(key, null);
+        }
 
-        public static string GetLocalizedString(string key, params object?[] args)
+        public static string GetLocalizedString(string key, params object?[]? args)
         {
             var resourceLoader = Windows.ApplicationModel.Resources.ResourceLoader.GetForViewIndependentUse();
             string localizedString = resourceLoader.GetString(key) ?? string.Empty;
@@ -312,6 +317,18 @@ namespace Infomaniak.kDrive
             }
 
             return localizedString;
+        }
+
+        public static void SetEnumComboBoxSelection<TEnum>(ComboBox comboBox, TEnum value) where TEnum : struct, Enum
+        {
+            foreach (var item in comboBox.Items)
+            {
+                if (item is ComboBoxItem comboBoxItem && comboBoxItem.Tag is string tagString && Enum.TryParse<TEnum>(tagString, out TEnum itemValue) && itemValue.Equals(value))
+                {
+                    comboBox.SelectedItem = comboBoxItem;
+                    return;
+                }
+            }
         }
     }
 }
