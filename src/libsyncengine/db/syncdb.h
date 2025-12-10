@@ -127,6 +127,7 @@ class SyncDb : public Db {
         void invalidateCache() { ++_revision; }
         bool pushChildIds(ReplicaSide side, DbNodeId parentNodeDbId, std::vector<NodeId> &ids);
         bool pushChildIds(ReplicaSide side, DbNodeId parentNodeDbId, NodeSet &ids);
+        bool upgradeTables();
 
         // Helpers
         bool checkNodeIds(const DbNode &node);

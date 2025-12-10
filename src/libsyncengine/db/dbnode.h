@@ -41,7 +41,7 @@ class DbNode {
                const std::optional<std::string> &checksum = std::nullopt, SyncFileStatus status = SyncFileStatus::Unknown,
                bool syncing = false);
 
-        DbNode();
+        DbNode() = default;
         virtual ~DbNode() = default;
 
         inline DbNodeId nodeId() const { return _nodeId; }
@@ -65,24 +65,29 @@ class DbNode {
         NodeId nodeId(const ReplicaSide side) const;
         SyncName name(const ReplicaSide side) const;
 
-        inline void setNodeId(DbNodeId nodeId) { _nodeId = nodeId; }
-        inline void setParentNodeId(std::optional<DbNodeId> parentNodeId) { _parentNodeId = parentNodeId; }
+        inline void setNodeId(const DbNodeId nodeId) { _nodeId = nodeId; }
+        inline void setParentNodeId(const std::optional<DbNodeId> parentNodeId) { _parentNodeId = parentNodeId; }
         virtual void setNameLocal(const SyncName &name);
         virtual void setNameRemote(const SyncName &name);
-        inline void setNodeIdLocal(std::optional<NodeId> newNodeIdLocal) { _nodeIdLocal = newNodeIdLocal; }
-        inline void setNodeIdRemote(std::optional<NodeId> newNodeIdDrive) { _nodeIdRemote = newNodeIdDrive; }
-        inline void setCreated(std::optional<SyncTime> newCreated) { _created = newCreated; }
-        inline void setLastModifiedLocal(std::optional<SyncTime> newLastModifiedLocal) {
+        inline void setNodeIdLocal(const std::optional<NodeId> &newNodeIdLocal) { _nodeIdLocal = newNodeIdLocal; }
+        inline void setNodeIdRemote(const std::optional<NodeId> &newNodeIdDrive) { _nodeIdRemote = newNodeIdDrive; }
+        inline void setCreated(const std::optional<SyncTime> newCreated) { _created = newCreated; }
+        inline void setLastModifiedLocal(const std::optional<SyncTime> newLastModifiedLocal) {
             _lastModifiedLocal = newLastModifiedLocal;
         }
-        inline void setLastModifiedRemote(std::optional<SyncTime> newLastModifiedDrive) {
+        inline void setLastModifiedRemote(const std::optional<SyncTime> newLastModifiedDrive) {
             _lastModifiedRemote = newLastModifiedDrive;
         }
-        inline void setType(NodeType newNodeType) { _type = newNodeType; }
-        inline void setSize(int64_t newSize) { _size = newSize; }
-        inline void setChecksum(std::optional<std::string> newChecksum) { _checksum = newChecksum; }
-        inline void setStatus(SyncFileStatus status) { _status = status; }
-        inline void setSyncing(bool syncing) { _syncing = syncing; }
+        inline void setType(const NodeType newNodeType) { _type = newNodeType; }
+        inline void setSize(const int64_t newSize) { _size = newSize; }
+        inline void setChecksum(const std::optional<std::string> &newChecksum) { _checksum = newChecksum; }
+        inline void setStatus(const SyncFileStatus status) { _status = status; }
+        inline void setSyncing(const bool syncing) { _syncing = syncing; }
+
+        [[nodiscard]] bool canWrite() const { return _canWrite; }
+        void setCanWrite(const bool canWrite) { _canWrite = canWrite; }
+        [[nodiscard]] bool canShare() const { return _canShare; }
+        void setCanShare(const bool canShare) { _canShare = canShare; }
 
         struct HashFunction {
                 std::size_t operator()(const DbNode &dbNode) const { return std::hash<DbNodeId>()(dbNode._nodeId); }
@@ -92,11 +97,12 @@ class DbNode {
                    _nodeIdRemote == other._nodeIdRemote && _created == other._created && _nameLocal == other._nameLocal &&
                    _nameRemote == other._nameRemote && _checksum == other._checksum &&
                    _lastModifiedLocal == other._lastModifiedLocal && _lastModifiedRemote == other._lastModifiedRemote &&
-                   _type == other._type && _size == other._size && _status == other._status && _syncing == other._syncing;
+                   _type == other._type && _size == other._size && _status == other._status && _syncing == other._syncing &&
+                   _canWrite == other._canWrite && _canShare == other._canShare;
         }
 
     protected:
-        DbNodeId _nodeId;
+        DbNodeId _nodeId{0};
         std::optional<DbNodeId> _parentNodeId;
         SyncName _nameLocal; // /!\ Must be in NFC form
         SyncName _nameRemote; // /!\ Must be in NFC form
@@ -105,11 +111,13 @@ class DbNode {
         std::optional<SyncTime> _created;
         std::optional<SyncTime> _lastModifiedLocal;
         std::optional<SyncTime> _lastModifiedRemote;
-        NodeType _type;
-        int64_t _size;
+        NodeType _type{NodeType::Unknown};
+        int64_t _size{0};
         std::optional<std::string> _checksum;
-        SyncFileStatus _status;
-        bool _syncing;
+        SyncFileStatus _status{SyncFileStatus::Unknown};
+        bool _syncing{false};
+        bool _canWrite{false};
+        bool _canShare{false};
 };
 
 } // namespace KDC

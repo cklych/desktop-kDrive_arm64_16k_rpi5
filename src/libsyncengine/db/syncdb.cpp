@@ -56,6 +56,8 @@
     "checksum TEXT,"                   \
     "status INTEGER,"                  \
     "syncing INTEGER,"                 \
+    "canWrite INTEGER,"                \
+    "canShare INTEGER,"                \
     "FOREIGN KEY (parentNodeId) REFERENCES node(nodeId) ON DELETE CASCADE ON UPDATE NO ACTION);"
 
 #define ALTER_NODE_TABLE_FK_ID "alter_node_fk"
@@ -82,14 +84,15 @@
 #define INSERT_NODE_REQUEST_ID "insert_node"
 #define INSERT_NODE_REQUEST                                                                                        \
     "INSERT INTO node (parentNodeId, nameLocal, nameDrive, nodeIdLocal, nodeIdDrive, created, lastModifiedLocal, " \
-    "lastModifiedDrive, type, size, checksum, status, syncing) "                                                   \
-    "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13);"
+    "lastModifiedDrive, type, size, checksum, status, syncing, canWrite, canShare) "                               \
+    "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15);"
 
 #define UPDATE_NODE_REQUEST_ID "update_node"
-#define UPDATE_NODE_REQUEST                                                                                     \
-    "UPDATE node SET parentNodeId=?1, nameLocal=?2, nameDrive=?3, nodeIdLocal=?4, nodeIdDrive=?5, created=?6, " \
-    "lastModifiedLocal=?7, lastModifiedDrive=?8, type=?9, size=?10, checksum=?11, status=?12, syncing=?13 "     \
-    "WHERE nodeId=?14;"
+#define UPDATE_NODE_REQUEST                                                                                                \
+    "UPDATE node SET parentNodeId=?1, nameLocal=?2, nameDrive=?3, nodeIdLocal=?4, nodeIdDrive=?5, created=?6, "            \
+    "lastModifiedLocal=?7, lastModifiedDrive=?8, type=?9, size=?10, checksum=?11, status=?12, syncing=?13, canWrite=?14, " \
+    "canShare=?15 "                                                                                                        \
+    "WHERE nodeId=?16;"
 
 #define UPDATE_NODE_STATUS_REQUEST_ID "update_node_status"
 #define UPDATE_NODE_STATUS_REQUEST \
@@ -128,7 +131,7 @@
 #define SELECT_NODE_BY_NODEID_FULL_ID "select_node2"
 #define SELECT_NODE_BY_NODEID_FULL                                                                                               \
     "SELECT parentNodeId, nameLocal, nameDrive, nodeIdLocal, nodeIdDrive, created, lastModifiedLocal, lastModifiedDrive, type, " \
-    "size, checksum, status, syncing FROM node "                                                                                 \
+    "size, checksum, status, syncing, canWrite, canShare FROM node "                                                             \
     "WHERE nodeId=?1;"
 
 #define SELECT_NODE_BY_NODEID_PARENTID 0
@@ -144,6 +147,8 @@
 #define SELECT_NODE_BY_NODEID_CHECKSUM 10
 #define SELECT_NODE_BY_NODEID_STATUS 11
 #define SELECT_NODE_BY_NODEID_SYNCING 12
+#define SELECT_NODE_BY_NODEID_CANWRITE 13
+#define SELECT_NODE_BY_NODEID_CANSHARE 14
 
 #define SELECT_NODE_BY_NODEIDLOCAL_ID "select_node3"
 #define SELECT_NODE_BY_NODEIDLOCAL                                                                                          \
@@ -172,6 +177,8 @@
 #define SELECT_NODE_BY_REPLICAID_CHECKSUM 10
 #define SELECT_NODE_BY_REPLICAID_STATUS 11
 #define SELECT_NODE_BY_REPLICAID_SYNCING 12
+#define SELECT_NODE_BY_REPLICAID_CANWRITE 13
+#define SELECT_NODE_BY_REPLICAID_CANSHARE 14
 
 #define SELECT_NODE_BY_PARENTNODEID_AND_NAMELOCAL_REQUEST_ID "select_node5"
 #define SELECT_NODE_BY_PARENTNODEID_AND_NAMELOCAL_REQUEST    \
@@ -544,6 +551,9 @@ bool SyncDb::upgrade(const std::string &fromVersion, const std::string &toVersio
 
         freeRequests();
     }
+
+    upgradeTables();
+
     LOG_DEBUG(_logger, "Upgrade of Sync DB successfully completed.");
 
     return true;
@@ -621,6 +631,8 @@ bool SyncDb::insertNode(const DbNode &node, DbNodeId &dbNodeId, bool &constraint
     LOG_IF_FAIL(queryBindValue(queryId, 11, (node.checksum() ? dbtype(node.checksum().value()) : std::monostate())))
     LOG_IF_FAIL(queryBindValue(queryId, 12, static_cast<int>(node.status())))
     LOG_IF_FAIL(queryBindValue(queryId, 13, static_cast<int>(node.syncing())))
+    LOG_IF_FAIL(queryBindValue(queryId, 14, static_cast<int>(node.canWrite())))
+    LOG_IF_FAIL(queryBindValue(queryId, 15, static_cast<int>(node.canShare())))
 
     if (!queryExecAndGetRowId(queryId, dbNodeId, errId, error)) {
         LOG_WARN(_logger, "Error running query: " << queryId);
@@ -668,7 +680,9 @@ bool SyncDb::updateNode(const DbNode &node, bool &found) {
             queryBindValue(UPDATE_NODE_REQUEST_ID, 11, (node.checksum() ? dbtype(node.checksum().value()) : std::monostate())))
     LOG_IF_FAIL(queryBindValue(UPDATE_NODE_REQUEST_ID, 12, static_cast<int>(node.status())))
     LOG_IF_FAIL(queryBindValue(UPDATE_NODE_REQUEST_ID, 13, static_cast<int>(node.syncing())))
-    LOG_IF_FAIL(queryBindValue(UPDATE_NODE_REQUEST_ID, 14, node.nodeId()))
+    LOG_IF_FAIL(queryBindValue(UPDATE_NODE_REQUEST_ID, 14, static_cast<int>(node.canWrite())))
+    LOG_IF_FAIL(queryBindValue(UPDATE_NODE_REQUEST_ID, 15, static_cast<int>(node.canShare())))
+    LOG_IF_FAIL(queryBindValue(UPDATE_NODE_REQUEST_ID, 16, node.nodeId()))
 
     int errId = -1;
     std::string error;
@@ -954,7 +968,7 @@ bool SyncDb::node(ReplicaSide side, const NodeId &nodeId, DbNode &dbNode, bool &
         return true;
     }
 
-    DbNodeId dbNodeId;
+    DbNodeId dbNodeId = 0;
     LOG_IF_FAIL(queryInt64Value(id, SELECT_NODE_BY_REPLICAID_DBID, dbNodeId));
 
     bool isNull = false;
@@ -963,7 +977,7 @@ bool SyncDb::node(ReplicaSide side, const NodeId &nodeId, DbNode &dbNode, bool &
     if (isNull) {
         parentNodeId = std::nullopt;
     } else {
-        DbNodeId dbParentNodeId;
+        DbNodeId dbParentNodeId = 0;
         LOG_IF_FAIL(queryInt64Value(id, SELECT_NODE_BY_REPLICAID_PARENTID, dbParentNodeId));
         parentNodeId = std::make_optional(dbParentNodeId);
     }
@@ -1021,6 +1035,12 @@ bool SyncDb::node(ReplicaSide side, const NodeId &nodeId, DbNode &dbNode, bool &
     LOG_IF_FAIL(queryIntValue(id, SELECT_NODE_BY_REPLICAID_SYNCING, intResult));
     auto syncing = static_cast<bool>(intResult);
 
+    LOG_IF_FAIL(queryIntValue(id, SELECT_NODE_BY_REPLICAID_CANWRITE, intResult));
+    auto canWrite = static_cast<bool>(intResult);
+
+    LOG_IF_FAIL(queryIntValue(id, SELECT_NODE_BY_REPLICAID_CANSHARE, intResult));
+    auto canShare = static_cast<bool>(intResult);
+
     LOG_IF_FAIL(queryResetAndClearBindings(id));
 
     dbNode.setNodeId(dbNodeId);
@@ -1042,6 +1062,8 @@ bool SyncDb::node(ReplicaSide side, const NodeId &nodeId, DbNode &dbNode, bool &
     dbNode.setChecksum(checksum);
     dbNode.setStatus(status);
     dbNode.setSyncing(syncing);
+    dbNode.setCanWrite(canWrite);
+    dbNode.setCanShare(canShare);
 
     return true;
 }
@@ -1160,7 +1182,7 @@ bool SyncDb::path(DbNodeId dbNodeId, SyncPath &localPath, SyncPath &remotePath, 
 bool SyncDb::node(DbNodeId dbNodeId, DbNode &dbNode, bool &found) {
     const std::scoped_lock lock(_mutex);
 
-    std::string id = SELECT_NODE_BY_NODEID_FULL_ID;
+    const std::string id = SELECT_NODE_BY_NODEID_FULL_ID;
     LOG_IF_FAIL(queryResetAndClearBindings(id));
     LOG_IF_FAIL(queryBindValue(id, 1, dbNodeId));
     if (!queryNext(id, found)) {
@@ -1177,7 +1199,7 @@ bool SyncDb::node(DbNodeId dbNodeId, DbNode &dbNode, bool &found) {
     if (isNull) {
         parentNodeId = std::nullopt;
     } else {
-        DbNodeId dbParentNodeId;
+        DbNodeId dbParentNodeId = 0;
         LOG_IF_FAIL(queryInt64Value(id, SELECT_NODE_BY_NODEID_PARENTID, dbParentNodeId));
         parentNodeId = std::make_optional(dbParentNodeId);
     }
@@ -1199,7 +1221,7 @@ bool SyncDb::node(DbNodeId dbNodeId, DbNode &dbNode, bool &found) {
     if (isNull) {
         created = std::nullopt;
     } else {
-        SyncTime timeTmp;
+        SyncTime timeTmp = 0;
         LOG_IF_FAIL(queryInt64Value(id, SELECT_NODE_BY_NODEID_CREATED, timeTmp));
         created = std::make_optional(timeTmp);
     }
@@ -1209,7 +1231,7 @@ bool SyncDb::node(DbNodeId dbNodeId, DbNode &dbNode, bool &found) {
     if (isNull) {
         lastModifiedLocal = std::nullopt;
     } else {
-        SyncTime timeTmp;
+        SyncTime timeTmp = 0;
         LOG_IF_FAIL(queryInt64Value(id, SELECT_NODE_BY_NODEID_LASTMODLOCAL, timeTmp));
         lastModifiedLocal = std::make_optional(timeTmp);
     }
@@ -1219,16 +1241,16 @@ bool SyncDb::node(DbNodeId dbNodeId, DbNode &dbNode, bool &found) {
     if (isNull) {
         lastModifiedDrive = std::nullopt;
     } else {
-        SyncTime timeTmp;
+        SyncTime timeTmp = 0;
         LOG_IF_FAIL(queryInt64Value(id, SELECT_NODE_BY_NODEID_LASTMODDRIVE, timeTmp));
         lastModifiedDrive = std::make_optional(timeTmp);
     }
 
-    int intResult;
+    int intResult = 0;
     LOG_IF_FAIL(queryIntValue(id, SELECT_NODE_BY_NODEID_TYPE, intResult));
-    NodeType type = static_cast<NodeType>(intResult);
+    const auto type = static_cast<NodeType>(intResult);
 
-    int64_t size;
+    int64_t size = 0;
     LOG_IF_FAIL(queryInt64Value(id, SELECT_NODE_BY_NODEID_SIZE, size));
 
     std::optional<std::string> checksum;
@@ -1242,10 +1264,16 @@ bool SyncDb::node(DbNodeId dbNodeId, DbNode &dbNode, bool &found) {
     }
 
     LOG_IF_FAIL(queryIntValue(id, SELECT_NODE_BY_NODEID_STATUS, intResult));
-    SyncFileStatus status = static_cast<SyncFileStatus>(intResult);
+    const auto status = static_cast<SyncFileStatus>(intResult);
 
     LOG_IF_FAIL(queryIntValue(id, SELECT_NODE_BY_NODEID_SYNCING, intResult));
-    bool syncing = static_cast<bool>(intResult);
+    const auto syncing = static_cast<bool>(intResult);
+
+    LOG_IF_FAIL(queryIntValue(id, SELECT_NODE_BY_NODEID_CANWRITE, intResult));
+    const auto canWrite = static_cast<bool>(intResult);
+
+    LOG_IF_FAIL(queryIntValue(id, SELECT_NODE_BY_NODEID_CANSHARE, intResult));
+    const auto canShare = static_cast<bool>(intResult);
 
     LOG_IF_FAIL(queryResetAndClearBindings(id));
 
@@ -1263,6 +1291,8 @@ bool SyncDb::node(DbNodeId dbNodeId, DbNode &dbNode, bool &found) {
     dbNode.setChecksum(checksum);
     dbNode.setStatus(status);
     dbNode.setSyncing(syncing);
+    dbNode.setCanWrite(canWrite);
+    dbNode.setCanShare(canShare);
 
     return true;
 }
@@ -2043,6 +2073,19 @@ bool SyncDb::pushChildIds(ReplicaSide side, DbNodeId parentNodeDbId, std::vector
         LOG_IF_FAIL(queryResetAndClearBindings(SELECT_NODE_BY_PARENTNODEID_REQUEST_ID));
     }
 
+    return true;
+}
+
+bool SyncDb::upgradeTables() {
+    const std::string tableName = "node";
+    std::string columnName = "canWrite";
+    if (!addIntegerColumnIfMissing(tableName, columnName)) {
+        return false;
+    }
+    columnName = "canShare";
+    if (!addIntegerColumnIfMissing(tableName, columnName)) {
+        return false;
+    }
     return true;
 }
 
