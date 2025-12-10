@@ -28,32 +28,38 @@ struct FSOperation {
                     SyncTime createdAt = 0, SyncTime lastModified = 0, int64_t size = 0, const SyncPath &path = "",
                     const SyncPath &destinationPath = "");
 
-        inline UniqueId id() const { return _id; }
-        inline OperationType operationType() const { return _operationType; }
-        inline NodeId nodeId() const { return _nodeId; }
-        inline NodeType objectType() const { return _objectType; }
-        inline SyncTime createdAt() const { return _createdAt; }
-        inline SyncTime lastModified() const { return _lastModified; }
-        inline int64_t size() const { return _size; }
-        inline SyncPath path() const { return _path; }
-        inline SyncPath destinationPath() const { return _destinationPath; }
+        [[nodiscard]] UniqueId id() const { return _id; }
+        [[nodiscard]] OperationType operationType() const { return _operationType; }
+        [[nodiscard]] NodeId nodeId() const { return _nodeId; }
+        [[nodiscard]] NodeType objectType() const { return _objectType; }
+        [[nodiscard]] SyncTime createdAt() const { return _createdAt; }
+        [[nodiscard]] SyncTime lastModified() const { return _lastModified; }
+        [[nodiscard]] int64_t size() const { return _size; }
+        [[nodiscard]] SyncPath path() const { return _path; }
+        [[nodiscard]] SyncPath destinationPath() const { return _destinationPath; }
 
-        bool operator!=(const FSOperation &o) const {
-            return (this->_operationType != o._operationType) || (this->_nodeId != o._nodeId);
+        [[nodiscard]] bool canWrite() const { return _canWrite; }
+        void setCanWrite(const bool canWrite) { _canWrite = canWrite; }
+        [[nodiscard]] bool canShare() const { return _canShare; }
+        void setCanShare(const bool canShare) { _canShare = canShare; }
+
+        bool operator==(const FSOperation &o) const {
+            return this->_operationType == o._operationType && this->_nodeId == o._nodeId;
         }
 
-        bool operator==(const FSOperation &o) const { return !(*this != o); }
-
     private:
-        UniqueId _id = 0;
-        OperationType _operationType = OperationType::None;
+        UniqueId _id{0};
+        OperationType _operationType{OperationType::None};
         NodeId _nodeId;
-        NodeType _objectType = NodeType::Unknown;
-        SyncTime _createdAt = 0;
-        SyncTime _lastModified = 0;
-        int64_t _size = 0;
+        NodeType _objectType{NodeType::Unknown};
+        SyncTime _createdAt{0};
+        SyncTime _lastModified{0};
+        int64_t _size{0};
         SyncPath _path;
         SyncPath _destinationPath;
+
+        bool _canWrite{true};
+        bool _canShare{true};
 
         static UniqueId _nextId;
 };

@@ -123,7 +123,9 @@ class Node {
         inline void clearMoveOriginInfos() { _moveOriginInfos.clear(); }
         inline void setStatus(const NodeStatus &status) { _status = status; }
 
-        inline std::unordered_map<NodeId, std::shared_ptr<Node>> &children() { return _childrenById; }
+        inline std::unordered_map<NodeId, std::shared_ptr<Node>, StringHashFunction, std::equal_to<>> &children() {
+            return _childrenById;
+        }
         std::shared_ptr<Node> findChildren(const SyncName &name, const NodeId &nodeId = "");
         std::shared_ptr<Node> findChildrenById(const NodeId &nodeId);
         [[nodiscard]] bool insertChildren(std::shared_ptr<Node> child);
@@ -183,7 +185,7 @@ class Node {
         std::optional<SyncTime> _lastModified = std::nullopt;
         int64_t _size = 0;
         NodeStatus _status = NodeStatus::Unprocessed; // node was already processed during reconciliation
-        std::unordered_map<NodeId, std::shared_ptr<Node>> _childrenById;
+        std::unordered_map<NodeId, std::shared_ptr<Node>, StringHashFunction, std::equal_to<>> _childrenById;
         std::shared_ptr<Node> _parentNode;
         // For moved items
         MoveOriginInfos _moveOriginInfos;
