@@ -438,6 +438,7 @@ struct IoHelper {
          \return An ioError representing the success or failure of the underlying OS API call.
          */
         static IoError getRights(const SyncPath &path, bool &read, bool &write, bool &exec) noexcept;
+        static IoError canWrite(const SyncPath &path, bool &write) noexcept;
 
         //! Set the rights of the item indicated by `path`.
         /*!

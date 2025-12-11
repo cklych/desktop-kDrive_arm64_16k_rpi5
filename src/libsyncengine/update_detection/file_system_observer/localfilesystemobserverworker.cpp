@@ -302,9 +302,15 @@ ExitInfo LocalFileSystemObserverWorker::changesDetected(
             }
 
             // This can be either Create, Move or Edit operation
-            SnapshotItem item(nodeId, parentNodeId, absolutePath.filename().native(), fileStat.creationTime,
-                              fileStat.modificationTime, nodeType, fileStat.size, isLink, true, true);
+            bool canWrite = false;
+            if (IoHelper::canWrite(absolutePath, canWrite) != IoError::Success) {
+                LOGW_SYNCPAL_WARN(_logger, L"Failed to retrieve write right for: " << Utility::formatSyncPath(absolutePath)
+                                                                                   << L" (" << CommonUtility::s2ws(nodeId)
+                                                                                   << L")");
+            }
 
+            const SnapshotItem item(nodeId, parentNodeId, absolutePath.filename().native(), fileStat.creationTime,
+                                    fileStat.modificationTime, nodeType, fileStat.size, isLink, canWrite, true);
             if (!_liveSnapshot.updateItem(item)) {
                 LOGW_SYNCPAL_WARN(_logger, L"Failed to insert item: " << Utility::formatSyncPath(absolutePath) << L" ("
                                                                       << CommonUtility::s2ws(nodeId) << L")");
@@ -313,10 +319,7 @@ ExitInfo LocalFileSystemObserverWorker::changesDetected(
             }
 
             if (ParametersCache::isExtendedLogEnabled()) {
-                LOGW_SYNCPAL_DEBUG(_logger, L"Item inserted in local snapshot: " << Utility::formatSyncPath(absolutePath) << L" ("
-                                                                                 << CommonUtility::s2ws(nodeId) << L") at "
-                                                                                 << fileStat.modificationTime);
-
+                logItemUpdated(absolutePath, item);
                 //                if (nodeType == NodeType::File) {
                 //                    if (canComputeChecksum(absolutePath)) {
                 //                        // Start asynchronous checkum generation
@@ -366,12 +369,16 @@ ExitInfo LocalFileSystemObserverWorker::changesDetected(
         }
 
         // Update liveSnapshot
-        if (_liveSnapshot.updateItem(SnapshotItem(nodeId, parentNodeId, absolutePath.filename().native(), fileStat.creationTime,
-                                                  fileStat.modificationTime, nodeType, fileStat.size, isLink, true, true))) {
+        bool canWrite = false;
+        if (IoHelper::canWrite(absolutePath, canWrite) != IoError::Success) {
+            LOGW_SYNCPAL_WARN(_logger, L"Failed to retrieve write right for: " << Utility::formatSyncPath(absolutePath) << L" ("
+                                                                               << CommonUtility::s2ws(nodeId) << L")");
+        }
+        const SnapshotItem item(nodeId, parentNodeId, absolutePath.filename().native(), fileStat.creationTime,
+                                fileStat.modificationTime, nodeType, fileStat.size, isLink, canWrite, true);
+        if (_liveSnapshot.updateItem(item)) {
             if (ParametersCache::isExtendedLogEnabled()) {
-                LOGW_SYNCPAL_DEBUG(_logger, L"Item: " << Utility::formatSyncPath(absolutePath) << L" ("
-                                                      << CommonUtility::s2ws(nodeId) << L") updated in local snapshot at "
-                                                      << fileStat.modificationTime);
+                logItemUpdated(absolutePath, item);
             }
 
             if (nodeType == NodeType::File) {
@@ -562,6 +569,16 @@ void LocalFileSystemObserverWorker::sendAccessDeniedError(const SyncPath &absolu
     }
 }
 
+void LocalFileSystemObserverWorker::logItemUpdated(const SyncPath &absolutePath, const SnapshotItem &item) {
+    LOGW_SYNCPAL_DEBUG(_logger, L"Item updated in local snapshot: "
+                                        << Utility::formatSyncPath(absolutePath) << L" inode:" << CommonUtility::s2ws(item.id())
+                                        << L" parent inode:" << CommonUtility::s2ws(item.parentId()) << L" createdAt:"
+                                        << item.createdAt() << L" modificationTime:" << item.lastModified() << L" isDir:"
+                                        << (item.type() == NodeType::Directory) << L" size:" << item.size() << L" isLink:"
+                                        << item.isLink() << L" canWrite: " << item.canWrite() << L" canShare: "
+                                        << item.canShare());
+}
+
 ExitInfo LocalFileSystemObserverWorker::exploreDir(const SyncPath &absoluteParentDirPath, bool fromChangeDetected) {
     // Check if root dir exists
     auto ioError = IoError::Success;
@@ -732,17 +749,17 @@ ExitInfo LocalFileSystemObserverWorker::exploreDir(const SyncPath &absoluteParen
                 }
             }
 
+            bool canWrite = false;
+            if (IoHelper::canWrite(absolutePath, canWrite) != IoError::Success) {
+                LOGW_SYNCPAL_WARN(_logger, L"Failed to retrieve write right for: " << Utility::formatSyncPath(absolutePath)
+                                                                                   << L" (" << CommonUtility::s2ws(nodeId)
+                                                                                   << L")");
+            }
             const SnapshotItem item(nodeId, parentNodeId, absolutePath.filename().native(), fileStat.creationTime,
-                                    fileStat.modificationTime, itemType.nodeType, fileStat.size, isLink, true, true);
+                                    fileStat.modificationTime, itemType.nodeType, fileStat.size, isLink, canWrite, true);
             if (_liveSnapshot.updateItem(item)) {
                 if (ParametersCache::isExtendedLogEnabled()) {
-                    LOGW_SYNCPAL_DEBUG(
-                            _logger, L"Item inserted in local snapshot: "
-                                             << Utility::formatSyncPath(absolutePath) << L" inode:" << CommonUtility::s2ws(nodeId)
-                                             << L" parent inode:" << CommonUtility::s2ws(parentNodeId) << L" createdAt:"
-                                             << fileStat.creationTime << L" modificationTime:" << fileStat.modificationTime
-                                             << L" isDir:" << (itemType.nodeType == NodeType::Directory) << L" size:"
-                                             << fileStat.size << L" isLink:" << isLink);
+                    logItemUpdated(absolutePath, item);
                 }
             } else {
                 LOGW_SYNCPAL_WARN(_logger, L"Failed to insert item: " << Utility::formatSyncPath(absolutePath.filename())

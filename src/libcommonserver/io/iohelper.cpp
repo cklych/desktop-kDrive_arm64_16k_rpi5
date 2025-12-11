@@ -342,6 +342,11 @@ IoError IoHelper::getRights(const SyncPath &path, bool &read, bool &write, bool 
 }
 #endif
 
+IoError IoHelper::canWrite(const SyncPath &path, bool &write) noexcept {
+    bool read = false;
+    bool exec = false;
+    return getRights(path, read, write, exec);
+}
 
 bool IoHelper::getItemType(const SyncPath &path, ItemType &itemType) noexcept {
     itemType = ItemType{};

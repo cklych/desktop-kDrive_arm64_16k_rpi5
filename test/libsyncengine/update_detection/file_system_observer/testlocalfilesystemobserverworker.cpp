@@ -57,15 +57,16 @@ void TestLocalFileSystemObserverWorker::setUp() {
     _tempDir = LocalTemporaryDirectory("TestLocalFileSystemObserverWorker");
     _rootFolderPath = _tempDir.path() / "sync_folder";
     _subDirPath = _rootFolderPath / "sub_dir";
-    Poco::File(Path2Str(_subDirPath)).createDirectories();
+    IoError dummyError = IoError::Unknown;
+    (void) IoHelper::createDirectory(_subDirPath, true, dummyError);
     for (uint64_t i = 0; i < nbFileInTestDir; i++) {
-        std::string filename = "test" + std::to_string(i) + ".txt";
+        const auto filename = "test" + std::to_string(i) + ".txt";
         SyncPath filepath = _subDirPath / filename;
         testhelpers::generateOrEditTestFile(filepath);
         FileStat fileStat;
         bool exists = false;
         IoHelper::getFileStat(filepath, &fileStat, exists);
-        _testFiles.emplace_back(std::to_string(fileStat.inode), filepath);
+        (void) _testFiles.emplace_back(std::to_string(fileStat.inode), filepath);
     }
 
     // Create parmsDb
@@ -312,7 +313,8 @@ void TestLocalFileSystemObserverWorker::testLFSOWithDirs() {
     {
         /// Create dir
         LOGW_DEBUG(_logger, L"***** test create dir *****");
-        testhelpers::generateOrEditTestFile(testAbsolutePath);
+        IoError dummyError = IoError::Unknown;
+        (void) IoHelper::createDirectory(testAbsolutePath, true, dummyError);
 
         Utility::msleep(1000); // Wait 1sec
 
@@ -325,8 +327,20 @@ void TestLocalFileSystemObserverWorker::testLFSOWithDirs() {
         bool ignore = false;
         _syncPal->liveSnapshot(ReplicaSide::Local).path(itemId, path, ignore);
         CPPUNIT_ASSERT(path == CommonUtility::relativePath(_rootFolderPath, testAbsolutePath));
-    }
+        CPPUNIT_ASSERT(_syncPal->liveSnapshot(ReplicaSide::Local).canWrite(itemId));
 
+        /// Create dir without write right
+        const auto tmpPath = _rootFolderPath / "noWriteAccess";
+        (void) IoHelper::createDirectory(tmpPath, true, dummyError);
+        (void) IoHelper::setReadOnly(tmpPath);
+
+        Utility::msleep(1000); // Wait 1sec
+
+        IoHelper::getFileStat(tmpPath, &fileStat, exists);
+        const NodeId tmpId = std::to_string(fileStat.inode);
+        CPPUNIT_ASSERT(_syncPal->liveSnapshot(ReplicaSide::Local).exists(tmpId));
+        CPPUNIT_ASSERT(!_syncPal->liveSnapshot(ReplicaSide::Local).canWrite(tmpId));
+    }
     {
         /// Move dir
         LOGW_DEBUG(_logger, L"***** test move dir *****");

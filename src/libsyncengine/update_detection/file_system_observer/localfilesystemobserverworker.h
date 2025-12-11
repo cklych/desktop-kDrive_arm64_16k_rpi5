@@ -54,6 +54,7 @@ class LocalFileSystemObserverWorker : public FileSystemObserverWorker {
 #endif
 
         void sendAccessDeniedError(const SyncPath &absolutePath);
+        void logItemUpdated(const SyncPath &absolutePath, const SnapshotItem &item);
 
         std::chrono::steady_clock::time_point _needUpdateTimerStart = std::chrono::steady_clock::now();
 
