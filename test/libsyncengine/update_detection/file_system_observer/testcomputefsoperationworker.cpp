@@ -263,21 +263,27 @@ void TestComputeFSOperationWorker::testMultipleOps() {
 
     // On local replica
     // Create operation
-    _syncPal->_localFSObserverWorker->_liveSnapshot.updateItem(SnapshotItem("l_ad", "l_a", Str("AD"), testhelpers::defaultTime,
-                                                                            testhelpers::defaultTime, NodeType::File, 123, false,
-                                                                            true, true));
+    (void) _syncPal->_localFSObserverWorker->_liveSnapshot.updateItem(
+            SnapshotItem("l_ad", "l_a", Str("AD"), testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File, 123, false,
+                         true, true));
     // Edit operation
-    _syncPal->_localFSObserverWorker->_liveSnapshot.setLastModified("l_aa", testhelpers::defaultTime + 60);
+    (void) _syncPal->_localFSObserverWorker->_liveSnapshot.setLastModified("l_aa", testhelpers::defaultTime + 60);
     // Move operation
     (void) _syncPal->_localFSObserverWorker->_liveSnapshot.removeItem("l_ab");
     (void) _syncPal->_localFSObserverWorker->_liveSnapshot.updateItem(SnapshotItem(
             "l_ab", "l_b", Str("AB"), testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File, 0, false, true, true));
 
     // Rename operation
-    _syncPal->_localFSObserverWorker->_liveSnapshot.setName("l_ba", Str("BA-renamed"));
+    (void) _syncPal->_localFSObserverWorker->_liveSnapshot.setName("l_ba", Str("BA-renamed"));
     // Delete operation
     (void) _syncPal->_localFSObserverWorker->_liveSnapshot.removeItem("l_bb");
 
+    // On remote replica
+    // Create operations
+    (void) _syncPal->_remoteFSObserverWorker->_liveSnapshot.updateItem(SnapshotItem(
+            "r_c", "1", Str("C"), testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File, 123, false, true, true));
+    (void) _syncPal->_remoteFSObserverWorker->_liveSnapshot.updateItem(SnapshotItem(
+            "r_d", "1", Str("D"), testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File, 123, false, false, false));
     // Create operation on a too big directory
     (void) _syncPal->_localFSObserverWorker->_liveSnapshot.updateItem(
             SnapshotItem("r_af", "r_a", Str("AF_too_big"), testhelpers::defaultTime, testhelpers::defaultTime,
@@ -287,7 +293,7 @@ void TestComputeFSOperationWorker::testMultipleOps() {
                          550 * 1024 * 1024, false, true,
                          true)); // File size: 550MB
     // Rename operation on a blacklisted directory
-    _syncPal->_localFSObserverWorker->_liveSnapshot.setName("r_ac", Str("AC-renamed"));
+    (void) _syncPal->_localFSObserverWorker->_liveSnapshot.setName("r_ac", Str("AC-renamed"));
 
     _syncPal->copySnapshots();
     _syncPal->computeFSOperationsWorker()->execute();
@@ -301,10 +307,16 @@ void TestComputeFSOperationWorker::testMultipleOps() {
     CPPUNIT_ASSERT(!_syncPal->operationSet(ReplicaSide::Local)->findOp("l_ae", OperationType::Create, tmpOp));
 
     // On remote replica
+    CPPUNIT_ASSERT(_syncPal->operationSet(ReplicaSide::Remote)->findOp("r_c", OperationType::Create, tmpOp));
+    CPPUNIT_ASSERT(tmpOp->canWrite());
+    CPPUNIT_ASSERT(tmpOp->canShare());
+    CPPUNIT_ASSERT(_syncPal->operationSet(ReplicaSide::Remote)->findOp("r_d", OperationType::Create, tmpOp));
+    CPPUNIT_ASSERT(!tmpOp->canWrite());
+    CPPUNIT_ASSERT(!tmpOp->canShare());
     // Create operation but folder too big (should be ignored on local replica)
-    CPPUNIT_ASSERT(!_syncPal->operationSet(ReplicaSide::Local)->findOp("r_af", OperationType::Create, tmpOp));
-    CPPUNIT_ASSERT(!_syncPal->operationSet(ReplicaSide::Local)->findOp("r_afa", OperationType::Create, tmpOp));
-    CPPUNIT_ASSERT(!_syncPal->operationSet(ReplicaSide::Local)->findOp("r_ac", OperationType::Move, tmpOp));
+    CPPUNIT_ASSERT(!_syncPal->operationSet(ReplicaSide::Remote)->findOp("r_af", OperationType::Create, tmpOp));
+    CPPUNIT_ASSERT(!_syncPal->operationSet(ReplicaSide::Remote)->findOp("r_afa", OperationType::Create, tmpOp));
+    CPPUNIT_ASSERT(!_syncPal->operationSet(ReplicaSide::Remote)->findOp("r_ac", OperationType::Move, tmpOp));
 }
 
 void TestComputeFSOperationWorker::testLnkFileAlreadySynchronized() {
