@@ -49,38 +49,6 @@ bool SyncDbMock::prepare() {
     return SyncDb::prepare();
 }
 
-class DbNodeTest : public DbNode {
-    public:
-        DbNodeTest(std::optional<DbNodeId> parentNodeId, const SyncName &nameLocal, const SyncName &nameRemote,
-                   const std::optional<NodeId> &nodeIdLocal, const std::optional<NodeId> &nodeIdRemote,
-                   std::optional<SyncTime> created, std::optional<SyncTime> lastModifiedLocal,
-                   std::optional<SyncTime> lastModifiedRemote, NodeType type, int64_t size,
-                   const std::optional<std::string> &checksum, SyncFileStatus status = SyncFileStatus::Unknown,
-                   bool syncing = false) {
-            _nodeId = 0;
-            _parentNodeId = parentNodeId;
-            _nameLocal = nameLocal; // Don't check normalization
-            _nameRemote = nameRemote; // Don't check normalization
-            _nodeIdLocal = nodeIdLocal;
-            _nodeIdRemote = nodeIdRemote;
-            _created = created;
-            _lastModifiedLocal = lastModifiedLocal;
-            _lastModifiedRemote = lastModifiedRemote;
-            _type = type;
-            _size = size;
-            _checksum = checksum;
-            _status = status;
-            _syncing = syncing;
-        }
-
-        inline void setNameLocal(const SyncName &name) override {
-            _nameLocal = name; // Don't check normalization
-        }
-        inline void setNameRemote(const SyncName &name) override {
-            _nameRemote = name; // Don't check normalization
-        }
-};
-
 void TestSyncDb::setUp() {
     TestBase::start();
     bool alreadyExists = false;
@@ -200,10 +168,10 @@ std::vector<DbNode> TestSyncDb::setupSyncDb3_6_5(const std::vector<NodeId> &loca
     const auto nfd = testhelpers::makeNfdSyncName();
 
     DbNode node0(rootId, Str("a"), Str("A"), localNodeIds[0], "id drive 0", tLoc, tLoc, tDrive, NodeType::Directory, 0, "cs 2.2");
-    DbNodeTest node1(rootId, Str("c"), nfd, localNodeIds[1], "id drive 1", tLoc, tLoc, tDrive, NodeType::File, 0, "cs 2.2");
-    DbNodeTest node2(rootId, nfd, Str("a"), localNodeIds[2], "id drive 2", tLoc, tLoc, tDrive, NodeType::File, 0, "cs 2.2");
+    DbNode node1(rootId, Str("c"), nfd, localNodeIds[1], "id drive 1", tLoc, tLoc, tDrive, NodeType::File, 0, "cs 2.2");
+    DbNode node2(rootId, nfd, Str("a"), localNodeIds[2], "id drive 2", tLoc, tLoc, tDrive, NodeType::File, 0, "cs 2.2");
     DbNode node3(rootId, Str("b"), Str("B"), localNodeIds[3], "id drive 3", tLoc, tLoc, tDrive, NodeType::Directory, 0, "cs 2.2");
-    DbNodeTest node4(rootId, nfc, nfd, localNodeIds[4], "id drive 4", tLoc, tLoc, tDrive, NodeType::File, 0, "cs 2.2");
+    DbNode node4(rootId, nfc, nfd, localNodeIds[4], "id drive 4", tLoc, tLoc, tDrive, NodeType::File, 0, "cs 2.2");
 
     {
         /**
@@ -320,8 +288,8 @@ void TestSyncDb::testUpdateLocalName() {
     const time_t tLoc = std::time(nullptr);
     const time_t tDrive = std::time(nullptr);
 
-    DbNodeTest nodeDir1(_testObj->rootNode().nodeId(), nfc, Str("Dir drive 1"), "id loc 1", "id drive 1", tLoc, tLoc, tDrive,
-                        NodeType::Directory, 0, std::nullopt);
+    DbNode nodeDir1(_testObj->rootNode().nodeId(), nfc, Str("Dir drive 1"), "id loc 1", "id drive 1", tLoc, tLoc, tDrive,
+                    NodeType::Directory, 0, std::nullopt);
 
     DbNodeId dbNodeIdDir1;
     bool constraintError = false;
@@ -615,8 +583,8 @@ void TestSyncDb::testNodesTemplate(SyncDb &db, T &testObj) {
 
     // Insert node with NFD-normalized name
     const SyncName nfdEncodedName = testhelpers::makeNfdSyncName();
-    DbNodeTest nodeFile7(dbNodeIdDir1, nfdEncodedName, nfdEncodedName, "id loc 2.2", "id drive 2.2", tLoc, tLoc, tDrive,
-                         NodeType::File, 0, "cs 2.2");
+    DbNode nodeFile7(dbNodeIdDir1, nfdEncodedName, nfdEncodedName, "id loc 2.2", "id drive 2.2", tLoc, tLoc, tDrive,
+                     NodeType::File, 0, "cs 2.2");
     DbNodeId dbNodeIdFile7;
     CPPUNIT_ASSERT(db.insertNode(nodeFile7, dbNodeIdFile7, constraintError));
 

@@ -101,7 +101,7 @@ class DbNode {
                    _canWrite == other._canWrite && _canShare == other._canShare;
         }
 
-    protected:
+    private:
         DbNodeId _nodeId{0};
         std::optional<DbNodeId> _parentNodeId;
         SyncName _nameLocal; // /!\ Must be in NFC form
