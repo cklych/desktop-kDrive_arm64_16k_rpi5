@@ -462,7 +462,9 @@ void TestSyncDb::testDbNode() {
     DbNode testNode(0, _testObj->rootNode().nodeId(), Str("test"), Str("test"), "l_test", "r_test", testhelpers::defaultTime,
                     testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File, testhelpers::defaultFileSize,
                     std::nullopt);
-    DbNodeId dbNodeId;
+    testNode.setCanWrite(true);
+    testNode.setCanShare(true);
+    DbNodeId dbNodeId = 0;
     bool constraintError = false;
     CPPUNIT_ASSERT(_testObj->insertNode(testNode, dbNodeId, constraintError));
     CPPUNIT_ASSERT_EQUAL(false, constraintError);
@@ -473,6 +475,8 @@ void TestSyncDb::testDbNode() {
     DbNode dbNodeFromDbId;
     CPPUNIT_ASSERT(_testObj->node(dbNodeId, dbNodeFromDbId, found) && found);
     CPPUNIT_ASSERT(dbNodeFromReplicaId == dbNodeFromDbId);
+    CPPUNIT_ASSERT(dbNodeFromDbId.canWrite());
+    CPPUNIT_ASSERT(dbNodeFromReplicaId.canWrite());
 }
 
 void TestSyncDb::testReloadIfNeeded() {

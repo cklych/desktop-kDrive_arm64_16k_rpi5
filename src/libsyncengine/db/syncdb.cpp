@@ -153,14 +153,14 @@
 #define SELECT_NODE_BY_NODEIDLOCAL_ID "select_node3"
 #define SELECT_NODE_BY_NODEIDLOCAL                                                                                          \
     "SELECT nodeId, parentNodeId, nameLocal, nameDrive, nodeIdLocal, nodeIdDrive, created, lastModifiedLocal, type, size, " \
-    "checksum, status, syncing FROM "                                                                                       \
+    "checksum, status, syncing, canWrite, canShare FROM "                                                                   \
     "node "                                                                                                                 \
     "WHERE nodeIdLocal=?1;"
 
 #define SELECT_NODE_BY_NODEIDDRIVE_ID "select_node4"
 #define SELECT_NODE_BY_NODEIDDRIVE                                                                                          \
     "SELECT nodeId, parentNodeId, nameLocal, nameDrive, nodeIdLocal, nodeIdDrive, created, lastModifiedDrive, type, size, " \
-    "checksum, status, syncing FROM "                                                                                       \
+    "checksum, status, syncing, canWrite, canShare FROM "                                                                   \
     "node "                                                                                                                 \
     "WHERE nodeIdDrive=?1;"
 
