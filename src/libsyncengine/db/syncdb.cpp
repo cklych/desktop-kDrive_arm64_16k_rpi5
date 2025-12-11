@@ -213,13 +213,13 @@
 #define SELECT_ALL_RENAMED_COLON_NODES_REQUEST_ID "select_node11"
 #define SELECT_ALL_RENAMED_COLON_NODES_REQUEST                                                                  \
     "SELECT nodeId, parentNodeId, nameLocal, nameDrive, nodeIdLocal, nodeIdDrive, created, lastModifiedLocal, " \
-    "lastModifiedDrive, type, size, checksum, status, syncing FROM node "                                       \
+    "lastModifiedDrive, type, size, checksum, status, syncing, canWrite, canShare FROM node "                   \
     "WHERE nameLocal != nameDrive AND instr(nameDrive, ':') > 0;"
 
 #define SELECT_ALL_RENAMED_NODES_REQUEST_ID "select_node12"
 #define SELECT_ALL_RENAMED_NODES_REQUEST                                                                        \
     "SELECT nodeId, parentNodeId, nameLocal, nameDrive, nodeIdLocal, nodeIdDrive, created, lastModifiedLocal, " \
-    "lastModifiedDrive, type, size, checksum, status, syncing FROM node "                                       \
+    "lastModifiedDrive, type, size, checksum, status, syncing, canWrite, canShare FROM node "                   \
     "WHERE nameLocal != nameDrive;"
 
 #define SELECT_ANCESTORS_NODES_REQUEST_ID "select_node13"
@@ -246,7 +246,7 @@
 #define SELECT_ALL_NODES_REQUEST_ID "select_node16"
 #define SELECT_ALL_NODES_REQUEST                                                                                \
     "SELECT nodeId, parentNodeId, nameLocal, nameDrive, nodeIdLocal, nodeIdDrive, created, lastModifiedLocal, " \
-    "lastModifiedDrive, type, size, checksum, status, syncing FROM node;"
+    "lastModifiedDrive, type, size, checksum, status, syncing, canWrite, canShare FROM node;"
 
 //
 // sync_node
@@ -2136,16 +2136,16 @@ bool SyncDb::pushChildIds(ReplicaSide side, DbNodeId parentNodeDbId, NodeSet &id
     return true;
 }
 
-bool SyncDb::selectAllRenamedNodes(std::vector<DbNode> &dbNodeList, bool onlyColon) {
+bool SyncDb::selectAllRenamedNodes(std::vector<DbNode> &dbNodeList, const bool onlyColon) {
     const std::scoped_lock lock(_mutex);
 
     dbNodeList.clear();
 
-    std::string requestId = onlyColon ? SELECT_ALL_RENAMED_COLON_NODES_REQUEST_ID : SELECT_ALL_RENAMED_NODES_REQUEST_ID;
+    const std::string requestId = onlyColon ? SELECT_ALL_RENAMED_COLON_NODES_REQUEST_ID : SELECT_ALL_RENAMED_NODES_REQUEST_ID;
 
     LOG_IF_FAIL(queryResetAndClearBindings(requestId));
 
-    bool found;
+    bool found = false;
     for (;;) {
         if (!queryNext(requestId, found)) {
             LOG_WARN(_logger, "Error getting query result: " << requestId);
@@ -2155,7 +2155,7 @@ bool SyncDb::selectAllRenamedNodes(std::vector<DbNode> &dbNodeList, bool onlyCol
             break;
         }
 
-        DbNodeId dbNodeId;
+        DbNodeId dbNodeId = 0;
         LOG_IF_FAIL(queryInt64Value(requestId, 0, dbNodeId));
 
         bool isNull = false;
@@ -2164,7 +2164,7 @@ bool SyncDb::selectAllRenamedNodes(std::vector<DbNode> &dbNodeList, bool onlyCol
         if (isNull) {
             parentNodeId = std::nullopt;
         } else {
-            DbNodeId dbParentNodeId;
+            DbNodeId dbParentNodeId = 0;
             LOG_IF_FAIL(queryInt64Value(requestId, 1, dbParentNodeId));
             parentNodeId = std::make_optional(dbParentNodeId);
         }
@@ -2199,7 +2199,7 @@ bool SyncDb::selectAllRenamedNodes(std::vector<DbNode> &dbNodeList, bool onlyCol
         if (isNull) {
             created = std::nullopt;
         } else {
-            SyncTime timeTmp;
+            SyncTime timeTmp = 0;
             LOG_IF_FAIL(queryInt64Value(requestId, 6, timeTmp));
             created = std::make_optional(timeTmp);
         }
@@ -2209,7 +2209,7 @@ bool SyncDb::selectAllRenamedNodes(std::vector<DbNode> &dbNodeList, bool onlyCol
         if (isNull) {
             lastModifiedLocal = std::nullopt;
         } else {
-            SyncTime timeTmp;
+            SyncTime timeTmp = 0;
             LOG_IF_FAIL(queryInt64Value(requestId, 7, timeTmp));
             lastModifiedLocal = std::make_optional(timeTmp);
         }
@@ -2219,16 +2219,16 @@ bool SyncDb::selectAllRenamedNodes(std::vector<DbNode> &dbNodeList, bool onlyCol
         if (isNull) {
             lastModifiedDrive = std::nullopt;
         } else {
-            SyncTime timeTmp;
+            SyncTime timeTmp = 0;
             LOG_IF_FAIL(queryInt64Value(requestId, 8, timeTmp));
             lastModifiedDrive = std::make_optional(timeTmp);
         }
 
-        int intResult;
+        int intResult = 0;
         LOG_IF_FAIL(queryIntValue(requestId, 9, intResult));
-        NodeType type = static_cast<NodeType>(intResult);
+        const auto type = static_cast<NodeType>(intResult);
 
-        int64_t size;
+        int64_t size = 0;
         LOG_IF_FAIL(queryInt64Value(requestId, 10, size));
 
         std::optional<std::string> checksum;
@@ -2242,10 +2242,16 @@ bool SyncDb::selectAllRenamedNodes(std::vector<DbNode> &dbNodeList, bool onlyCol
         }
 
         LOG_IF_FAIL(queryIntValue(requestId, 10, intResult));
-        SyncFileStatus status = static_cast<SyncFileStatus>(intResult);
+        const auto status = static_cast<SyncFileStatus>(intResult);
 
         LOG_IF_FAIL(queryIntValue(requestId, 11, intResult));
-        bool syncing = static_cast<bool>(intResult);
+        const auto syncing = static_cast<bool>(intResult);
+
+        LOG_IF_FAIL(queryIntValue(requestId, 12, intResult));
+        const auto canWrite = static_cast<bool>(intResult);
+
+        LOG_IF_FAIL(queryIntValue(requestId, 13, intResult));
+        const auto canShare = static_cast<bool>(intResult);
 
         DbNode dbNode;
         dbNode.setNodeId(dbNodeId);
@@ -2262,6 +2268,8 @@ bool SyncDb::selectAllRenamedNodes(std::vector<DbNode> &dbNodeList, bool onlyCol
         dbNode.setChecksum(checksum);
         dbNode.setStatus(status);
         dbNode.setSyncing(syncing);
+        dbNode.setCanWrite(canWrite);
+        dbNode.setCanShare(canShare);
 
         dbNodeList.push_back(dbNode);
     }
@@ -2457,7 +2465,7 @@ bool SyncDb::dbNodes(std::unordered_set<DbNode, DbNode::HashFunction> &dbNodes, 
 
         int intResult = 0;
         LOG_IF_FAIL(queryIntValue(SELECT_ALL_NODES_REQUEST_ID, 9, intResult));
-        NodeType type = static_cast<NodeType>(intResult);
+        const auto type = static_cast<NodeType>(intResult);
 
         int64_t size = 0;
         LOG_IF_FAIL(queryInt64Value(SELECT_ALL_NODES_REQUEST_ID, 10, size));
@@ -2473,12 +2481,22 @@ bool SyncDb::dbNodes(std::unordered_set<DbNode, DbNode::HashFunction> &dbNodes, 
         }
 
         LOG_IF_FAIL(queryIntValue(SELECT_ALL_NODES_REQUEST_ID, 12, intResult));
-        SyncFileStatus status = static_cast<SyncFileStatus>(intResult);
+        const auto status = static_cast<SyncFileStatus>(intResult);
 
         LOG_IF_FAIL(queryIntValue(SELECT_ALL_NODES_REQUEST_ID, 13, intResult));
-        bool syncing = static_cast<bool>(intResult);
-        dbNodes.emplace(dbNodeId, parentNodeId, nameLocal, nameDrive, nodeIdLocal, nodeIdDrive, created, lastModifiedLocal,
-                        lastModifiedDrive, type, size, checksum, status, syncing);
+        const auto syncing = static_cast<bool>(intResult);
+
+        LOG_IF_FAIL(queryIntValue(SELECT_ALL_NODES_REQUEST_ID, 14, intResult));
+        const auto canWrite = static_cast<bool>(intResult);
+
+        LOG_IF_FAIL(queryIntValue(SELECT_ALL_NODES_REQUEST_ID, 15, intResult));
+        const auto canShare = static_cast<bool>(intResult);
+
+        DbNode dbNode(dbNodeId, parentNodeId, nameLocal, nameDrive, nodeIdLocal, nodeIdDrive, created, lastModifiedLocal,
+                      lastModifiedDrive, type, size, checksum, status, syncing);
+        dbNode.setCanWrite(canWrite);
+        dbNode.setCanShare(canShare);
+        dbNodes.emplace(dbNode);
     }
     LOG_IF_FAIL(queryResetAndClearBindings(SELECT_NODE_BY_PARENTNODEID_REQUEST_ID));
     revision = _revision;

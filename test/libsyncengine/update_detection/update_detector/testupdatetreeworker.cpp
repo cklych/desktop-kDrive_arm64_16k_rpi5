@@ -45,12 +45,12 @@ void TestUpdateTreeWorker::setUp() {
     _localUpdateTree = std::make_shared<UpdateTree>(ReplicaSide::Local, SyncDb::driveRootNode());
     _remoteUpdateTree = std::make_shared<UpdateTree>(ReplicaSide::Remote, SyncDb::driveRootNode());
 
+    setUpDbTree();
+
     _localUpdateTreeWorker = std::make_shared<UpdateTreeWorker>(_syncDb->cache(), _operationSet, _localUpdateTree,
                                                                 "Test Tree Updater", "LTRU", ReplicaSide::Local);
     _remoteUpdateTreeWorker = std::make_shared<UpdateTreeWorker>(_syncDb->cache(), _operationSet, _remoteUpdateTree,
                                                                  "Test Tree Updater", "RTRU", ReplicaSide::Remote);
-
-    setUpDbTree();
 
     _localUpdateTree->init();
     _remoteUpdateTree->init();
@@ -89,104 +89,106 @@ void TestUpdateTreeWorker::setUpDbTree() {
         └── 7
      */
 
-    DbNodeId dbNodeIdDir1;
-    DbNodeId dbNodeIdDir11;
-    DbNodeId dbNodeIdDir111;
-    DbNodeId dbNodeId112;
-    DbNodeId dbNodeIdFile1111;
-    DbNodeId dbNodeIdDir2;
-    DbNodeId dbNodeIdDir3;
-    DbNodeId dbNodeIdDir31;
-    DbNodeId dbNodeIdDir32;
-    DbNodeId dbnodeIdDir4;
-    DbNodeId dbnodeIdfile4111;
-    DbNodeId dbnodeIdfile4112;
-    DbNodeId dbnodeIdDir5;
-    DbNodeId dbnodeIdfile51;
-    DbNodeId dbnodeIdfile6;
-    DbNodeId dbnodeIdfile6a;
+    DbNodeId dbNodeIdDir1 = 0;
+    DbNodeId dbNodeIdDir11 = 0;
+    DbNodeId dbNodeIdDir111 = 0;
+    DbNodeId dbNodeId112 = 0;
+    DbNodeId dbNodeIdFile1111 = 0;
+    DbNodeId dbNodeIdDir2 = 0;
+    DbNodeId dbNodeIdDir3 = 0;
+    DbNodeId dbNodeIdDir31 = 0;
+    DbNodeId dbNodeIdDir32 = 0;
+    DbNodeId dbnodeIdDir4 = 0;
+    DbNodeId dbnodeIdfile4111 = 0;
+    DbNodeId dbnodeIdfile4112 = 0;
+    DbNodeId dbnodeIdDir5 = 0;
+    DbNodeId dbnodeIdfile51 = 0;
+    DbNodeId dbnodeIdfile6 = 0;
+    DbNodeId dbnodeIdfile6a = 0;
 
     bool constraintError = false;
-    const DbNode nodeDir1(0, _syncDb->rootNode().nodeId(), Str("Dir 1"), Str("Dir 1"), "id1", "id drive 1",
-                          testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory,
-                          testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeDir1, dbNodeIdDir1, constraintError);
+    DbNode nodeDir1(0, _syncDb->rootNode().nodeId(), Str("Dir 1"), Str("Dir 1"), "id1", "id drive 1", testhelpers::defaultTime,
+                    testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory, testhelpers::defaultFileSize,
+                    std::nullopt);
+    nodeDir1.setCanWrite(false);
+    nodeDir1.setCanShare(false);
+    (void) _syncDb->insertNode(nodeDir1, dbNodeIdDir1, constraintError);
     const DbNode nodeDir11(0, dbNodeIdDir1, Str("Dir 1.1"), Str("Dir 1.1"), "id11", "id drive 11", testhelpers::defaultTime,
                            testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory, testhelpers::defaultFileSize,
                            std::nullopt);
-    _syncDb->insertNode(nodeDir11, dbNodeIdDir11, constraintError);
+    (void) _syncDb->insertNode(nodeDir11, dbNodeIdDir11, constraintError);
     const DbNode nodeDir111(0, dbNodeIdDir11, Str("Dir 1.1.1"), Str("Dir 1.1.1"), "id111", "id drive 111",
                             testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory,
                             testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeDir111, dbNodeIdDir111, constraintError);
+    (void) _syncDb->insertNode(nodeDir111, dbNodeIdDir111, constraintError);
     const DbNode nodeFile112(0, dbNodeIdDir11, Str("File 1.1.2"), Str("File 1.1.2"), "id112", "id drive 112",
                              testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File,
                              testhelpers::defaultFileSize, "cs 1.1");
-    _syncDb->insertNode(nodeFile112, dbNodeId112, constraintError);
+    (void) _syncDb->insertNode(nodeFile112, dbNodeId112, constraintError);
     const DbNode nodeFile1111(0, dbNodeIdDir111, Str("File 1.1.1.1"), Str("File 1.1.1.1"), "id1111", "id drive 1111",
                               testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File,
                               testhelpers::defaultFileSize, "cs 1.1");
-    _syncDb->insertNode(nodeFile1111, dbNodeIdFile1111, constraintError);
+    (void) _syncDb->insertNode(nodeFile1111, dbNodeIdFile1111, constraintError);
     const DbNode nodeDir2(0, _syncDb->rootNode().nodeId(), Str("Dir 2"), Str("Dir 2"), "id2", "id drive 2",
                           testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory,
                           testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeDir2, dbNodeIdDir2, constraintError);
+    (void) _syncDb->insertNode(nodeDir2, dbNodeIdDir2, constraintError);
     const DbNode nodeDir3(0, _syncDb->rootNode().nodeId(), Str("Dir 3"), Str("Dir 3"), "id3", "id drive 3",
                           testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory,
                           testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeDir3, dbNodeIdDir3, constraintError);
+    (void) _syncDb->insertNode(nodeDir3, dbNodeIdDir3, constraintError);
     const DbNode nodeDir31(0, dbNodeIdDir3, Str("Dir 3.1"), Str("Dir 3.1"), "id31", "id drive 31", testhelpers::defaultTime,
                            testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory, testhelpers::defaultFileSize,
                            std::nullopt);
-    _syncDb->insertNode(nodeDir31, dbNodeIdDir31, constraintError);
+    (void) _syncDb->insertNode(nodeDir31, dbNodeIdDir31, constraintError);
     const DbNode nodeDir32(0, dbNodeIdDir3, Str("Dir 3.2"), Str("Dir 3.2"), "id32", "id drive 32", testhelpers::defaultTime,
                            testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory, testhelpers::defaultFileSize,
                            std::nullopt);
-    _syncDb->insertNode(nodeDir32, dbNodeIdDir32, constraintError);
+    (void) _syncDb->insertNode(nodeDir32, dbNodeIdDir32, constraintError);
     const DbNode nodeDir4(0, _syncDb->rootNode().nodeId(), Str("Dir 4"), Str("Dir 4"), "id4", "id drive 4",
                           testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory,
                           testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeDir4, dbnodeIdDir4, constraintError);
+    (void) _syncDb->insertNode(nodeDir4, dbnodeIdDir4, constraintError);
     const DbNode nodedir41(0, dbnodeIdDir4, Str("Dir 4.1"), Str("Dir 4.1"), "id41", "id drive 41", testhelpers::defaultTime,
                            testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory, testhelpers::defaultFileSize,
                            std::nullopt);
-    _syncDb->insertNode(nodedir41, _dbnodeIdDir41, constraintError);
+    (void) _syncDb->insertNode(nodedir41, _dbnodeIdDir41, constraintError);
     const DbNode nodeDir411(0, _dbnodeIdDir41, Str("Dir 4.1.1"), Str("Dir 4.1.1"), "id411", "id drive 411",
                             testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory,
                             testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeDir411, _dbnodeIdDir411, constraintError);
+    (void) _syncDb->insertNode(nodeDir411, _dbnodeIdDir411, constraintError);
     const DbNode nodeFile4111(0, _dbnodeIdDir411, Str("File 4.1.1.1"), Str("File 4.1.1.1"), "id4111", "id drive 4111",
                               testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File,
                               testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeFile4111, dbnodeIdfile4111, constraintError);
+    (void) _syncDb->insertNode(nodeFile4111, dbnodeIdfile4111, constraintError);
     const DbNode nodeFile4112(0, _dbnodeIdDir411, Str("File 4.1.1.2"), Str("File 4.1.1.2"), "id4112", "id drive 4112",
                               testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File,
                               testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeFile4112, dbnodeIdfile4112, constraintError);
+    (void) _syncDb->insertNode(nodeFile4112, dbnodeIdfile4112, constraintError);
     const DbNode nodeDir5(0, _syncDb->rootNode().nodeId(), Str("Dir 5"), Str("Dir 5"), "id5", "id drive 5",
                           testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::Directory,
                           testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeDir5, dbnodeIdDir5, constraintError);
+    (void) _syncDb->insertNode(nodeDir5, dbnodeIdDir5, constraintError);
     const DbNode nodeFile51(0, dbnodeIdDir5, Str("File 5.1"), Str("File 5.1"), "id51", "id drive 51", testhelpers::defaultTime,
                             testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File, testhelpers::defaultFileSize,
                             std::nullopt);
-    _syncDb->insertNode(nodeFile51, dbnodeIdfile51, constraintError);
+    (void) _syncDb->insertNode(nodeFile51, dbnodeIdfile51, constraintError);
     const DbNode nodeFile6(0, _syncDb->rootNode().nodeId(), Str("File 6"), Str("File 6"), "id6", "id drive 6",
                            testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File,
                            testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeFile6, dbnodeIdfile6, constraintError);
+    (void) _syncDb->insertNode(nodeFile6, dbnodeIdfile6, constraintError);
     const DbNode nodeFile6a(0, _syncDb->rootNode().nodeId(), Str("File 6a"), Str("File 6a"), "id6a", "id drive 6a",
                             testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime, NodeType::File,
                             testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeFile6a, dbnodeIdfile6a, constraintError);
+    (void) _syncDb->insertNode(nodeFile6a, dbnodeIdfile6a, constraintError);
 
     // Node with name encoded differently on remote (NFC) and on local (NFD) side
-    DbNodeId dbnodeIdfile7;
+    DbNodeId dbnodeIdfile7 = 0;
     const DbNode nodeFile7(0, _syncDb->rootNode().nodeId(), testhelpers::makeNfdSyncName(), testhelpers::makeNfdSyncName(),
                            "id7l", "id7r", testhelpers::defaultTime, testhelpers::defaultTime, testhelpers::defaultTime,
                            NodeType::File, testhelpers::defaultFileSize, std::nullopt);
-    _syncDb->insertNode(nodeFile7, dbnodeIdfile7, constraintError);
-    _syncDb->cache().reloadIfNeeded();
+    (void) _syncDb->insertNode(nodeFile7, dbnodeIdfile7, constraintError);
+    (void) _syncDb->cache().reloadIfNeeded();
 }
 
 void TestUpdateTreeWorker::setUpUpdateTree(ReplicaSide side) {
@@ -462,14 +464,24 @@ void TestUpdateTreeWorker::testStep1() {
                                                           testhelpers::defaultTime, testhelpers::defaultTime,
                                                           testhelpers::defaultFileSize, "Dir 3", "Dir 1/Dir 1.2/Dir 3"));
     // rename dir
-    _operationSet->insertOp(std::make_shared<FSOperation>(OperationType::Move, "id11", NodeType::Directory,
-                                                          testhelpers::defaultTime, testhelpers::defaultTime,
-                                                          testhelpers::defaultFileSize, "Dir 1/Dir 1.1", "Dir 1/Dir 1.2"));
+    const auto moveOp11 = std::make_shared<FSOperation>(OperationType::Move, "id11", NodeType::Directory,
+                                                        testhelpers::defaultTime, testhelpers::defaultTime,
+                                                        testhelpers::defaultFileSize, "Dir 1/Dir 1.1", "Dir 1/Dir 1.2");
+    moveOp11->setCanWrite(false);
+    moveOp11->setCanShare(false);
+    _operationSet->insertOp(moveOp11);
 
     CPPUNIT_ASSERT_EQUAL(ExitCode::Ok, _localUpdateTreeWorker->step1MoveDirectory());
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 1/Dir 1.2/Dir 1.2.1/Dir 1.1.1")->id() == "id111");
+
+    const auto node111 = _localUpdateTree->getNodeByPath("Dir 1/Dir 1.2/Dir 1.2.1/Dir 1.1.1");
+    CPPUNIT_ASSERT(node111->id() == "id111");
+    CPPUNIT_ASSERT(node111->canWrite());
+    CPPUNIT_ASSERT(node111->canShare());
     CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 1/Dir 1.2/Dir 3")->id() == "id3");
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 1/Dir 1.2")->id() == "id11");
+    const auto node11 = _localUpdateTree->getNodeByPath("Dir 1/Dir 1.2");
+    CPPUNIT_ASSERT(node11->id() == "id11");
+    CPPUNIT_ASSERT(!node11->canWrite());
+    CPPUNIT_ASSERT(!node11->canShare());
     CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 1/Dir 1.1") == nullptr);
 }
 
@@ -477,17 +489,22 @@ void TestUpdateTreeWorker::testStep2() {
     setUpUpdateTree(ReplicaSide::Local);
 
     // Step 2 :Move files
-    _operationSet->insertOp(std::make_shared<FSOperation>(OperationType::Move, "id1111", NodeType::File, testhelpers::defaultTime,
-                                                          testhelpers::defaultTime, testhelpers::defaultFileSize,
-                                                          "Dir 1/Dir 1.1/Dir 1.1.1/File 1.1.1.1", "Dir 1/File 1.1"));
+    const auto op = std::make_shared<FSOperation>(OperationType::Move, "id1111", NodeType::File, testhelpers::defaultTime,
+                                                  testhelpers::defaultTime, testhelpers::defaultFileSize,
+                                                  "Dir 1/Dir 1.1/Dir 1.1.1/File 1.1.1.1", "Dir 1/File 1.1");
+    op->setCanWrite(false);
+    op->setCanShare(false);
+    _operationSet->insertOp(op);
 
     CPPUNIT_ASSERT_EQUAL(ExitCode::Ok, _localUpdateTreeWorker->step2MoveFile());
-    std::shared_ptr<Node> node = _localUpdateTree->getNodeByPath("Dir 1/File 1.1");
+    const auto node = _localUpdateTree->getNodeByPath("Dir 1/File 1.1");
     CPPUNIT_ASSERT(node);
     CPPUNIT_ASSERT(node->hasChangeEvent(OperationType::Move));
     CPPUNIT_ASSERT(node->id() == "id1111");
     CPPUNIT_ASSERT(node->parentNode()->id() == "id1");
     CPPUNIT_ASSERT(node->moveOriginInfos().path() == "Dir 1/Dir 1.1/Dir 1.1.1/File 1.1.1.1");
+    CPPUNIT_ASSERT(!node->canWrite());
+    CPPUNIT_ASSERT(!node->canShare());
 }
 
 void TestUpdateTreeWorker::testStep3() {
@@ -586,9 +603,12 @@ void TestUpdateTreeWorker::testStep5() {
     setUpUpdateTree(ReplicaSide::Local);
 
     // Step 5 :create for Dir
-    _operationSet->insertOp(std::make_shared<FSOperation>(OperationType::Create, "id121", NodeType::Directory,
-                                                          testhelpers::defaultTime, testhelpers::defaultTime,
-                                                          testhelpers::defaultFileSize, "Dir 1/Dir 1.2/Dir 1.2.1"));
+    const auto op121 =
+            std::make_shared<FSOperation>(OperationType::Create, "id121", NodeType::Directory, testhelpers::defaultTime,
+                                          testhelpers::defaultTime, testhelpers::defaultFileSize, "Dir 1/Dir 1.2/Dir 1.2.1");
+    op121->setCanWrite(false);
+    op121->setCanShare(false);
+    _operationSet->insertOp(op121);
     _operationSet->insertOp(std::make_shared<FSOperation>(OperationType::Create, "idX", NodeType::Directory,
                                                           testhelpers::defaultTime, testhelpers::defaultTime,
                                                           testhelpers::defaultFileSize, "Dir 1/Dir x"));
@@ -600,11 +620,16 @@ void TestUpdateTreeWorker::testStep5() {
                                                           testhelpers::defaultFileSize, "Dir 5"));
     // test step5CreateDirectory
     CPPUNIT_ASSERT_EQUAL(ExitCode::Ok, _localUpdateTreeWorker->step5CreateDirectory());
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 1/Dir 1.2/Dir 1.2.1")->id() == "id121");
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 1/Dir 1.2/Dir 1.2.1")->hasChangeEvent(OperationType::Create));
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 1/Dir x")->id() == "idX");
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 1/Dir 1.2/Dir 1.2.1")->hasChangeEvent(OperationType::Create));
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 1/Dir x")->parentNode()->children().size() >= 2);
+    const auto node121 = _localUpdateTree->getNodeByPath("Dir 1/Dir 1.2/Dir 1.2.1");
+    CPPUNIT_ASSERT(node121->id() == "id121");
+    CPPUNIT_ASSERT(node121->hasChangeEvent(OperationType::Create));
+    CPPUNIT_ASSERT(!node121->canWrite());
+    CPPUNIT_ASSERT(!node121->canShare());
+    const auto nodeX = _localUpdateTree->getNodeByPath("Dir 1/Dir x");
+    CPPUNIT_ASSERT(nodeX->id() == "idX");
+    CPPUNIT_ASSERT(nodeX->parentNode()->children().size() >= 2);
+    CPPUNIT_ASSERT(nodeX->canWrite());
+    CPPUNIT_ASSERT(nodeX->canShare());
     CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 7")->id() == "id7");
     CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 7")->parentNode()->id() == _syncDb->rootNode().nodeIdLocal());
     CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 7")->children().empty());
@@ -617,9 +642,11 @@ void TestUpdateTreeWorker::testStep6() {
     _operationSet->insertOp(std::make_shared<FSOperation>(OperationType::Delete, "id4111", NodeType::File,
                                                           testhelpers::defaultTime, testhelpers::defaultTime,
                                                           testhelpers::defaultFileSize, "Dir 4/Dir 4.1/Dir 4.1.1/File 4.1.1.1"));
-    _operationSet->insertOp(std::make_shared<FSOperation>(OperationType::Create, "id52", NodeType::File, testhelpers::defaultTime,
-                                                          testhelpers::defaultTime, testhelpers::defaultFileSize,
-                                                          "Dir 5/File 5.2"));
+    const auto op52 = std::make_shared<FSOperation>(OperationType::Create, "id52", NodeType::File, testhelpers::defaultTime,
+                                                    testhelpers::defaultTime, testhelpers::defaultFileSize, "Dir 5/File 5.2");
+    op52->setCanWrite(false);
+    op52->setCanShare(false);
+    _operationSet->insertOp(op52);
     _operationSet->insertOp(std::make_shared<FSOperation>(OperationType::Create, "id15", NodeType::File, testhelpers::defaultTime,
                                                           testhelpers::defaultTime, testhelpers::defaultFileSize,
                                                           "Dir 7/File 1.5"));
@@ -633,32 +660,52 @@ void TestUpdateTreeWorker::testStep6() {
     CPPUNIT_ASSERT_EQUAL(ExitCode::Ok, _localUpdateTreeWorker->step4DeleteFile());
     // Step 6 : create files
     CPPUNIT_ASSERT_EQUAL(ExitCode::Ok, _localUpdateTreeWorker->step6CreateFile());
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 5/File 5.2")->id() == "id52");
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 5/File 5.2")->parentNode()->isTmp());
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 5/File 5.2")->hasChangeEvent(OperationType::Create));
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 7/File 1.5")->id() == "id15");
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 7/File 1.5")->parentNode()->isTmp());
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 7/File 1.5")->hasChangeEvent(OperationType::Create));
+    const auto node52 = _localUpdateTree->getNodeByPath("Dir 5/File 5.2");
+    CPPUNIT_ASSERT(node52->id() == "id52");
+    CPPUNIT_ASSERT(node52->parentNode()->isTmp());
+    CPPUNIT_ASSERT(node52->hasChangeEvent(OperationType::Create));
+    CPPUNIT_ASSERT(!node52->canWrite());
+    CPPUNIT_ASSERT(!node52->canShare());
+    const auto node15 = _localUpdateTree->getNodeByPath("Dir 7/File 1.5");
+    CPPUNIT_ASSERT(node15->id() == "id15");
+    CPPUNIT_ASSERT(node15->parentNode()->isTmp());
+    CPPUNIT_ASSERT(node15->hasChangeEvent(OperationType::Create));
+    CPPUNIT_ASSERT(node15->canWrite());
+    CPPUNIT_ASSERT(node15->canShare());
 }
 
 void TestUpdateTreeWorker::testStep7() {
     setUpUpdateTree(ReplicaSide::Local);
 
     // Step 7 : Edit
-    _operationSet->insertOp(std::make_shared<FSOperation>(OperationType::Edit, "id4112", NodeType::File, testhelpers::defaultTime,
-                                                          testhelpers::defaultTime, testhelpers::defaultFileSize,
-                                                          "Dir 4/Dir 4.1/Dir 4.1.1/File 4.1.1.2"));
+    const auto op4112 = std::make_shared<FSOperation>(OperationType::Edit, "id4112", NodeType::File, testhelpers::defaultTime,
+                                                      testhelpers::defaultTime, testhelpers::defaultFileSize,
+                                                      "Dir 4/Dir 4.1/Dir 4.1.1/File 4.1.1.2");
+    op4112->setCanWrite(false);
+    op4112->setCanShare(false);
+    _operationSet->insertOp(op4112);
+
     CPPUNIT_ASSERT_EQUAL(ExitCode::Ok, _localUpdateTreeWorker->step7EditFile());
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 4/Dir 4.1/Dir 4.1.1/File 4.1.1.2")->id() == "id4112");
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 4/Dir 4.1/Dir 4.1.1/File 4.1.1.2")->parentNode()->id() == "id411");
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 4/Dir 4.1/Dir 4.1.1/File 4.1.1.2")->hasChangeEvent(OperationType::Edit));
+
+    const auto node4112 = _localUpdateTree->getNodeByPath("Dir 4/Dir 4.1/Dir 4.1.1/File 4.1.1.2");
+    CPPUNIT_ASSERT(node4112->id() == "id4112");
+    CPPUNIT_ASSERT(node4112->parentNode()->id() == "id411");
+    CPPUNIT_ASSERT(node4112->hasChangeEvent(OperationType::Edit));
+    CPPUNIT_ASSERT(!node4112->canWrite());
+    CPPUNIT_ASSERT(!node4112->canShare());
 }
 
 void TestUpdateTreeWorker::testStep8() {
     setUpUpdateTree(ReplicaSide::Local);
 
     CPPUNIT_ASSERT_EQUAL(ExitCode::Ok, _localUpdateTreeWorker->step8CompleteUpdateTree());
-    CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 5")->id() == "id5");
+    const auto node5 = _localUpdateTree->getNodeByPath("Dir 5");
+    CPPUNIT_ASSERT(node5->id() == "id5");
+    CPPUNIT_ASSERT(node5->canWrite());
+    CPPUNIT_ASSERT(node5->canShare());
+    const auto node1 = _localUpdateTree->getNodeByPath("Dir 1");
+    CPPUNIT_ASSERT(!node1->canWrite());
+    CPPUNIT_ASSERT(!node1->canShare());
     CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 5/File 5.1")->id() == "id51");
     CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 1/Dir 1.1/File 1.1.2")->id() == "id112");
     CPPUNIT_ASSERT(_localUpdateTree->getNodeByPath("Dir 4/Dir 4.1/Dir 4.1.1/File 4.1.1.2")->id() == "id4112");

@@ -113,15 +113,22 @@ class Node {
 
         inline void setIdb(const std::optional<DbNodeId> &idb) { _idb = idb; }
         void setName(const SyncName &name);
-        inline void setInconsistencyType(InconsistencyType newInconsistencyType) { _inconsistencyType = newInconsistencyType; }
+        inline void setInconsistencyType(const InconsistencyType newInconsistencyType) {
+            _inconsistencyType = newInconsistencyType;
+        }
         inline void setCreatedAt(const std::optional<SyncTime> &createdAt) { _createdAt = createdAt; }
         inline void setModificationTime(const std::optional<SyncTime> &lastmodified) { _lastModified = lastmodified; }
-        inline void setSize(int64_t size) { _size = size; }
+        inline void setSize(const int64_t size) { _size = size; }
         inline void setPreviousId(const std::optional<NodeId> &previousNodeId) { _previousId = previousNodeId; }
         bool setParentNode(std::shared_ptr<Node> parentNode);
         inline void setMoveOriginInfos(const MoveOriginInfos &moveOriginInfos) { _moveOriginInfos = moveOriginInfos; }
         inline void clearMoveOriginInfos() { _moveOriginInfos.clear(); }
         inline void setStatus(const NodeStatus &status) { _status = status; }
+
+        [[nodiscard]] bool canWrite() const { return _canWrite; }
+        void setCanWrite(const bool can_write) { _canWrite = can_write; }
+        [[nodiscard]] bool canShare() const { return _canShare; }
+        void setCanShare(const bool can_share) { _canShare = can_share; }
 
         inline std::unordered_map<NodeId, std::shared_ptr<Node>, StringHashFunction, std::equal_to<>> &children() {
             return _childrenById;
@@ -163,7 +170,7 @@ class Node {
         [[nodiscard]] SyncPath getPath() const;
 
         [[nodiscard]] inline bool isTmp() const { return _isTmp; }
-        inline void setIsTmp(bool newIsTmp) { _isTmp = newIsTmp; }
+        inline void setIsTmp(const bool newIsTmp) { _isTmp = newIsTmp; }
 
     private:
         friend class UpdateTree;
@@ -172,19 +179,21 @@ class Node {
         inline void setId(const std::optional<NodeId> &nodeId) { _id = nodeId; }
         [[nodiscard]] bool isParentValid(std::shared_ptr<const Node> parentNode) const;
 
-        std::optional<DbNodeId> _idb = std::nullopt;
-        ReplicaSide _side = ReplicaSide::Unknown;
+        std::optional<DbNodeId> _idb;
+        ReplicaSide _side{ReplicaSide::Unknown};
         SyncName _name;
         SyncName _normalizedName;
-        InconsistencyType _inconsistencyType = InconsistencyType::None;
-        NodeType _type = NodeType::Unknown;
-        OperationType _changeEvents = OperationType::None;
-        std::optional<NodeId> _id = std::nullopt;
-        std::optional<NodeId> _previousId = std::nullopt;
-        std::optional<SyncTime> _createdAt = std::nullopt;
-        std::optional<SyncTime> _lastModified = std::nullopt;
-        int64_t _size = 0;
-        NodeStatus _status = NodeStatus::Unprocessed; // node was already processed during reconciliation
+        InconsistencyType _inconsistencyType{InconsistencyType::None};
+        NodeType _type{NodeType::Unknown};
+        OperationType _changeEvents{OperationType::None};
+        std::optional<NodeId> _id;
+        std::optional<NodeId> _previousId;
+        std::optional<SyncTime> _createdAt;
+        std::optional<SyncTime> _lastModified;
+        int64_t _size{0};
+        bool _canWrite{true};
+        bool _canShare{true};
+        NodeStatus _status{NodeStatus::Unprocessed}; // node was already processed during reconciliation
         std::unordered_map<NodeId, std::shared_ptr<Node>, StringHashFunction, std::equal_to<>> _childrenById;
         std::shared_ptr<Node> _parentNode;
         // For moved items
@@ -192,7 +201,7 @@ class Node {
         // For conflicts resolutions
         std::vector<ConflictType> _conflictsAlreadyConsidered;
 
-        bool _isTmp = false;
+        bool _isTmp{false};
 
         friend class TestNode;
         friend class TestUpdateTreeWorker;

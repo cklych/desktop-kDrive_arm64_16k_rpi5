@@ -116,8 +116,8 @@ class DbNode {
         std::optional<std::string> _checksum;
         SyncFileStatus _status{SyncFileStatus::Unknown};
         bool _syncing{false};
-        bool _canWrite{false};
-        bool _canShare{false};
+        bool _canWrite{true};
+        bool _canShare{true};
 };
 
 } // namespace KDC

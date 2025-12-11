@@ -299,10 +299,8 @@ ExitCode ComputeFSOperationWorker::inferChangeFromDbNode(const ReplicaSide side,
         // Edit operation
         const auto fsOp = std::make_shared<FSOperation>(OperationType::Edit, nodeId, NodeType::File, snapshot->createdAt(nodeId),
                                                         snapshotModificationTime, snapshot->size(nodeId), snapshotPath);
-        if (side == ReplicaSide::Remote) {
-            fsOp->setCanWrite(snapshot->canWrite(nodeId));
-            fsOp->setCanShare(snapshot->canShare(nodeId));
-        }
+        fsOp->setCanWrite(snapshot->canWrite(nodeId));
+        fsOp->setCanShare(snapshot->canShare(nodeId));
         opSet->insertOp(fsOp);
         logOperationGeneration(snapshot->side(), fsOp);
     }
@@ -319,10 +317,8 @@ ExitCode ComputeFSOperationWorker::inferChangeFromDbNode(const ReplicaSide side,
             fsOp = std::make_shared<FSOperation>(OperationType::Move, nodeId, dbNode.type(), snapshot->createdAt(nodeId),
                                                  snapshotModificationTime, snapshot->size(nodeId), dbPath, snapshotPath);
         }
-        if (side == ReplicaSide::Remote) {
-            fsOp->setCanWrite(snapshot->canWrite(nodeId));
-            fsOp->setCanShare(snapshot->canShare(nodeId));
-        }
+        fsOp->setCanWrite(snapshot->canWrite(nodeId));
+        fsOp->setCanShare(snapshot->canShare(nodeId));
         opSet->insertOp(fsOp);
         logOperationGeneration(snapshot->side(), fsOp);
     }
@@ -513,10 +509,8 @@ ExitCode ComputeFSOperationWorker::exploreSnapshotTree(const ReplicaSide side, c
             // Create operation
             const auto fsOp = std::make_shared<FSOperation>(OperationType::Create, nodeId, type, snapshot->createdAt(nodeId),
                                                             snapshot->lastModified(nodeId), snapshotSize, snapshotPath);
-            if (side == ReplicaSide::Remote) {
-                fsOp->setCanWrite(snapshot->canWrite(nodeId));
-                fsOp->setCanShare(snapshot->canShare(nodeId));
-            }
+            fsOp->setCanWrite(snapshot->canWrite(nodeId));
+            fsOp->setCanShare(snapshot->canShare(nodeId));
             opSet->insertOp(fsOp);
             logOperationGeneration(snapshot->side(), fsOp);
         }

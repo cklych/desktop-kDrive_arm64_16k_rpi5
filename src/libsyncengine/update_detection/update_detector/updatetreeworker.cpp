@@ -242,6 +242,8 @@ ExitCode UpdateTreeWorker::step3DeleteDirectory() {
                 existingNode = std::make_shared<Node>(idb, _side, deleteOp->path().filename().native(), deleteOp->objectType(),
                                                       OperationType::Delete, deleteOp->nodeId(), deleteOp->createdAt(),
                                                       deleteOp->lastModified(), deleteOp->size(), parentNode);
+                existingNode->setCanWrite(deleteOp->canWrite());
+                existingNode->setCanShare(deleteOp->canShare());
                 if (existingNode == nullptr) {
                     std::cout << "Failed to allocate memory" << std::endl;
                     LOG_SYNCPAL_ERROR(_logger, "Failed to allocate memory");
@@ -366,6 +368,8 @@ bool UpdateTreeWorker::updateTmpFileNode(std::shared_ptr<Node> newNode, const FS
     newNode->setModificationTime(op->lastModified());
     newNode->setSize(op->size());
     newNode->insertChangeEvent(opType);
+    newNode->setCanWrite(op->canWrite());
+    newNode->setCanShare(op->canShare());
     newNode->setIsTmp(false);
 
     if (opType == OperationType::Edit) {
@@ -489,6 +493,8 @@ ExitCode UpdateTreeWorker::step4DeleteFile() {
 
                 newNode = std::make_shared<Node>(idb, _side, op->path().filename().native(), op->objectType(), opType,
                                                  op->nodeId(), op->createdAt(), op->lastModified(), op->size(), parentNode);
+                newNode->setCanWrite(op->canWrite());
+                newNode->setCanShare(op->canShare());
                 if (newNode == nullptr) {
                     std::cout << "Failed to allocate memory" << std::endl;
                     LOG_SYNCPAL_ERROR(_logger, "Failed to allocate memory");
@@ -568,6 +574,8 @@ ExitCode UpdateTreeWorker::step5CreateDirectory() {
         currentNode->setModificationTime(createOp->lastModified());
         currentNode->setSize(createOp->size());
         currentNode->insertChangeEvent(createOp->operationType());
+        currentNode->setCanWrite(createOp->canWrite());
+        currentNode->setCanShare(createOp->canShare());
         currentNode->setIsTmp(false);
         _updateTree->nodes()[createOp->nodeId()] = currentNode;
         if (ParametersCache::isExtendedLogEnabled()) {
@@ -622,6 +630,8 @@ ExitCode UpdateTreeWorker::step6CreateFile() {
                 newNode->setCreatedAt(operation->createdAt());
                 newNode->setModificationTime(operation->lastModified());
                 newNode->setSize(operation->size());
+                newNode->setCanWrite(operation->canWrite());
+                newNode->setCanShare(operation->canShare());
                 newNode->insertChangeEvent(operation->operationType());
                 newNode->setIsTmp(false);
 
@@ -643,6 +653,8 @@ ExitCode UpdateTreeWorker::step6CreateFile() {
         newNode = std::make_shared<Node>(std::nullopt, _side, operation->path().filename().native(), operation->objectType(),
                                          operation->operationType(), operation->nodeId(), operation->createdAt(),
                                          operation->lastModified(), operation->size(), parentNode);
+        newNode->setCanWrite(operation->canWrite());
+        newNode->setCanShare(operation->canShare());
         if (newNode == nullptr) {
             std::cout << "Failed to allocate memory" << std::endl;
             LOG_SYNCPAL_ERROR(_logger, "Failed to allocate memory");
@@ -697,6 +709,8 @@ ExitCode UpdateTreeWorker::step7EditFile() {
             newNode->setCreatedAt(editOp->createdAt());
             newNode->setModificationTime(editOp->lastModified());
             newNode->setSize(editOp->size());
+            newNode->setCanWrite(editOp->canWrite());
+            newNode->setCanShare(editOp->canShare());
             newNode->insertChangeEvent(editOp->operationType());
             if (!_updateTree->updateNodeId(newNode, editOp->nodeId())) {
                 LOGW_SYNCPAL_WARN(_logger, L"Error in UpdateTreeWorker::updateNodeId");
@@ -730,6 +744,8 @@ ExitCode UpdateTreeWorker::step7EditFile() {
         newNode = std::make_shared<Node>(idb, _side, editOp->path().filename().native(), editOp->objectType(),
                                          editOp->operationType(), editOp->nodeId(), editOp->createdAt(), editOp->lastModified(),
                                          editOp->size(), parentNode);
+        newNode->setCanWrite(editOp->canWrite());
+        newNode->setCanShare(editOp->canShare());
         if (newNode == nullptr) {
             std::cout << "Failed to allocate memory" << std::endl;
             LOG_SYNCPAL_ERROR(_logger, "Failed to allocate memory");
@@ -855,6 +871,8 @@ ExitCode UpdateTreeWorker::step8CompleteUpdateTree() {
             SyncName name = _side == ReplicaSide::Local ? dbNode.nameLocal() : dbNode.nameRemote();
             const auto newNode = std::make_shared<Node>(dbNode.nodeId(), _side, name, dbNode.type(), OperationType::None,
                                                         newNodeId, dbNode.created(), lastModified, dbNode.size(), parentNode);
+            newNode->setCanWrite(dbNode.canWrite());
+            newNode->setCanShare(dbNode.canShare());
             if (newNode == nullptr) {
                 std::cout << "Failed to allocate memory" << std::endl;
                 LOG_SYNCPAL_ERROR(_logger, "Failed to allocate memory");
@@ -934,6 +952,8 @@ ExitCode UpdateTreeWorker::createMoveNodes(const NodeType &nodeType) {
             currentNode->setSize(moveOp->size());
             currentNode->setName(moveOp->destinationPath().filename().native());
             currentNode->setIsTmp(false);
+            currentNode->setCanWrite(moveOp->canWrite());
+            currentNode->setCanShare(moveOp->canShare());
 
             // Create the parent node if it does not exist
             std::shared_ptr<Node> parentNode;
@@ -1004,6 +1024,8 @@ ExitCode UpdateTreeWorker::createMoveNodes(const NodeType &nodeType) {
                     idb, _side, moveOp->destinationPath().filename().native(), moveOp->objectType(), OperationType::Move,
                     moveOp->nodeId(), moveOp->createdAt(), moveOp->lastModified(), moveOp->size(), parentNode,
                     Node::MoveOriginInfos(moveOp->path(), NodeId(moveOriginParentId.value())));
+            newNode->setCanWrite(moveOp->canWrite());
+            newNode->setCanShare(moveOp->canShare());
 
             if (newNode == nullptr) {
                 std::cout << "Failed to allocate memory" << std::endl;
@@ -1258,7 +1280,7 @@ ExitCode UpdateTreeWorker::updateNodeWithDb(const std::shared_ptr<Node> parentNo
     nodeQueue.push(parentNode);
 
     while (!nodeQueue.empty()) {
-        std::shared_ptr<Node> node = nodeQueue.front();
+        const std::shared_ptr<Node> node = nodeQueue.front();
         nodeQueue.pop();
 
         if (stopAsked()) {
@@ -1320,6 +1342,8 @@ ExitCode UpdateTreeWorker::updateNodeWithDb(const std::shared_ptr<Node> parentNo
         if (node->size() == 0) {
             node->setSize(dbNode.size());
         }
+        node->setCanWrite(dbNode.canWrite());
+        node->setCanShare(dbNode.canShare());
 
         for (auto &nodeChild: node->children()) {
             nodeQueue.push(nodeChild.second);
@@ -1382,8 +1406,8 @@ ExitCode UpdateTreeWorker::updateTmpNode(const std::shared_ptr<Node> tmpNode) {
         return ExitCode::DataError;
     }
 
-    DbNodeId dbId;
-    if (!_syncDbReadOnlyCache.dbId(_side, *id, dbId, found)) {
+    DbNode dbNode;
+    if (!_syncDbReadOnlyCache.node(_side, *id, dbNode, found)) {
         LOG_SYNCPAL_WARN(_logger, "Error in SyncDb::dbId");
         return ExitCode::DbError;
     }
@@ -1393,7 +1417,9 @@ ExitCode UpdateTreeWorker::updateTmpNode(const std::shared_ptr<Node> tmpNode) {
                                                                << SyncName2WStr(tmpNode->name()) << L"') on side" << _side);
         return ExitCode::DataError;
     }
-    tmpNode->setIdb(dbId);
+    tmpNode->setIdb(dbNode.nodeId());
+    tmpNode->setCanWrite(dbNode.canWrite());
+    tmpNode->setCanShare(dbNode.canShare());
     tmpNode->setIsTmp(false);
 
     const auto &prevNode = _updateTree->nodes()[*id];
