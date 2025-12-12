@@ -1670,8 +1670,10 @@ ExitInfo ExecutorWorker::propagateCreateToDbAndTree(SyncOpPtr syncOp, const Node
     const int64_t size = newSize > -1 ? newSize : syncOp->affectedNode()->size();
     std::string localId = syncOp->targetSide() == ReplicaSide::Local ? newNodeId : (syncOp->affectedNode()->id().value_or(""));
     std::string remoteId = syncOp->targetSide() == ReplicaSide::Local ? (syncOp->affectedNode()->id().value_or("")) : newNodeId;
-    SyncName localName = syncOp->targetSide() == ReplicaSide::Local ? syncOp->newName() : syncOp->nodeName(ReplicaSide::Local);
-    SyncName remoteName = syncOp->targetSide() == ReplicaSide::Remote ? syncOp->newName() : syncOp->nodeName(ReplicaSide::Remote);
+    const auto localName = syncOp->targetSide() == ReplicaSide::Local ? syncOp->newName() : syncOp->nodeName(ReplicaSide::Local);
+    const auto remoteName =
+            syncOp->targetSide() == ReplicaSide::Remote ? syncOp->newName() : syncOp->nodeName(ReplicaSide::Remote);
+    const auto canWrite = syncOp->targetSide() == ReplicaSide::Local ? syncOp->affectedNode()->canWrite() : true;
 
     if (localId.empty() || remoteId.empty()) {
         LOGW_SYNCPAL_WARN(_logger, L"Empty " << (localId.empty() ? L"local" : L"remote") << L" id for item "
@@ -1684,6 +1686,7 @@ ExitInfo ExecutorWorker::propagateCreateToDbAndTree(SyncOpPtr syncOp, const Node
                   "" // TODO : change it once we start using content checksum
                   ,
                   syncOp->omit() ? SyncFileStatus::Success : SyncFileStatus::Unknown);
+    dbNode.setCanWrite(canWrite);
 
     if (ParametersCache::isExtendedLogEnabled()) {
         LOGW_SYNCPAL_DEBUG(_logger, L"Inserting in DB: " << L" localName=" << Utility::quotedSyncName(localName)
