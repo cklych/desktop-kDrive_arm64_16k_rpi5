@@ -400,3 +400,11 @@ endif()
 
 message("prefix: ${CMAKE_FIND_LIBRARY_PREFIXES}")
 message("suffix: ${CMAKE_FIND_LIBRARY_SUFFIXES}")
+
+# -----------------------------------------------------------------------------
+# CPack configuration for .deb packaging (Linux only)
+# -----------------------------------------------------------------------------
+option(CPACK_PACKAGING "Enable CPack packaging for .deb generation" OFF)
+if(CPACK_PACKAGING AND UNIX AND NOT APPLE)
+    include(${CMAKE_SOURCE_DIR}/cmake/CPackConfig.cmake)
+endif()
