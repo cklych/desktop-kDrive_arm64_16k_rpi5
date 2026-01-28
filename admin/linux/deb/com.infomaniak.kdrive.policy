@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<policyconfig>
+  <vendor>Infomaniak Network SA</vendor>
+  <vendor_url>https://www.infomaniak.com</vendor_url>
+  <icon_name>kdrive-win</icon_name>
+
+  <action id="com.infomaniak.kdrive.update">
+    <description>Install kDrive update</description>
+    <description xml:lang="fr">Installer la mise à jour kDrive</description>
+    <message>kDrive needs administrator privileges to install the update.</message>
+    <message xml:lang="fr">kDrive nécessite les privilèges administrateur pour installer la mise à jour.</message>
+    <icon_name>kdrive-win</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/opt/kdrive/bin/kdrive-update-helper</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+</policyconfig>

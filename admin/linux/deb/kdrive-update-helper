@@ -1,0 +1,33 @@
+#!/bin/bash
+# kDrive Update Helper
+# This script is executed with root privileges via PolicyKit
+# to install kDrive updates.
+
+set -e
+
+DEB_PATH="$1"
+
+if [ -z "$DEB_PATH" ]; then
+    echo "Error: No .deb file specified"
+    exit 1
+fi
+
+if [ ! -f "$DEB_PATH" ]; then
+    echo "Error: File not found: $DEB_PATH"
+    exit 1
+fi
+
+# Verify it's a .deb file
+if ! file "$DEB_PATH" | grep -q "Debian binary package"; then
+    echo "Error: Not a valid .deb file"
+    exit 1
+fi
+
+# Install the package
+dpkg -i "$DEB_PATH"
+
+# Clean up the downloaded .deb
+rm -f "$DEB_PATH"
+
+echo "kDrive updated successfully"
+exit 0
