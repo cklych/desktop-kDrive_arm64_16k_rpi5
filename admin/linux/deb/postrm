@@ -1,0 +1,37 @@
+#!/bin/bash
+# kDrive post-removal script
+set -e
+
+case "$1" in
+    remove|purge)
+        # Remove symlinks from /usr/bin
+        rm -f /usr/bin/kdrive
+        rm -f /usr/bin/kdrive-client
+        rm -rf /opt/kdrive
+
+        # Update icon cache
+        if command -v gtk-update-icon-cache &> /dev/null; then
+            gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+        fi
+
+        # Update desktop database
+        if command -v update-desktop-database &> /dev/null; then
+            update-desktop-database /usr/share/applications 2>/dev/null || true
+        fi
+
+        # Update shared library cache
+        ldconfig 2>/dev/null || true
+        ;;
+
+    upgrade)
+        # Nothing to do on upgrade
+        ;;
+esac
+
+# Purge: remove user configuration (optional, commented out for safety)
+if [ "$1" = "purge" ]; then
+    echo "Note: User configuration in ~/.config/kDrive was not removed."
+    echo "Remove it manually if needed: rm -rf ~/.config/kDrive"
+fi
+
+exit 0

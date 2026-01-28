@@ -1,0 +1,109 @@
+#!/bin/bash
+# kDrive post-installation script
+set -e
+
+KDRIVE_DIR="/opt/kdrive"
+BIN_DIR="${KDRIVE_DIR}/bin"
+
+echo "Configuring kDrive..."
+
+# -----------------------------------------------------------------------------
+# Setup wrapper scripts
+# The actual binaries are renamed to .bin, and wrapper scripts handle the
+# environment setup (LD_LIBRARY_PATH, QT_PLUGIN_PATH)
+# -----------------------------------------------------------------------------
+
+# Rename kDrive binary to kDrive.bin if it's an ELF binary
+if [ -f "${BIN_DIR}/kDrive" ]; then
+    if file "${BIN_DIR}/kDrive" 2>/dev/null | grep -q "ELF"; then
+        mv "${BIN_DIR}/kDrive" "${BIN_DIR}/kDrive.bin"
+        echo "  Renamed kDrive -> kDrive.bin"
+    fi
+fi
+
+# Rename kDrive_client binary to kDrive_client.bin if it's an ELF binary
+if [ -f "${BIN_DIR}/kDrive_client" ]; then
+    if file "${BIN_DIR}/kDrive_client" 2>/dev/null | grep -q "ELF"; then
+        mv "${BIN_DIR}/kDrive_client" "${BIN_DIR}/kDrive_client.bin"
+        echo "  Renamed kDrive_client -> kDrive_client.bin"
+    fi
+fi
+
+# Create wrapper script for kDrive (sync server)
+cat > "${BIN_DIR}/kDrive" << 'WRAPPER'
+#!/bin/bash
+# kDrive sync server launcher
+KDRIVE_DIR="/opt/kdrive"
+export LD_LIBRARY_PATH="${KDRIVE_DIR}/lib:${LD_LIBRARY_PATH}"
+export QT_PLUGIN_PATH="${KDRIVE_DIR}/plugins"
+export QT_QPA_PLATFORM_PLUGIN_PATH="${KDRIVE_DIR}/plugins/platforms"
+export KDRIVE_RESOURCES_PATH="${KDRIVE_DIR}/resources"
+export QTWEBENGINE_RESOURCES_PATH="${KDRIVE_DIR}/resources"
+export QTWEBENGINEPROCESS_PATH="${KDRIVE_DIR}/libexec/QtWebEngineProcess"
+exec "${KDRIVE_DIR}/bin/kDrive.bin" "$@"
+WRAPPER
+chmod +x "${BIN_DIR}/kDrive"
+echo "  Created kDrive wrapper script"
+
+# Create wrapper script for kDrive_client (GUI)
+cat > "${BIN_DIR}/kDrive_client" << 'WRAPPER'
+#!/bin/bash
+# kDrive client (GUI) launcher
+KDRIVE_DIR="/opt/kdrive"
+export LD_LIBRARY_PATH="${KDRIVE_DIR}/lib:${LD_LIBRARY_PATH}"
+export QT_PLUGIN_PATH="${KDRIVE_DIR}/plugins"
+export QT_QPA_PLATFORM_PLUGIN_PATH="${KDRIVE_DIR}/plugins/platforms"
+export KDRIVE_RESOURCES_PATH="${KDRIVE_DIR}/resources"
+export QTWEBENGINE_RESOURCES_PATH="${KDRIVE_DIR}/resources"
+export QTWEBENGINEPROCESS_PATH="${KDRIVE_DIR}/libexec/QtWebEngineProcess"
+exec "${KDRIVE_DIR}/bin/kDrive_client.bin" "$@"
+WRAPPER
+chmod +x "${BIN_DIR}/kDrive_client"
+echo "  Created kDrive_client wrapper script"
+
+# -----------------------------------------------------------------------------
+# Create symlinks in /usr/bin for PATH accessibility
+# -----------------------------------------------------------------------------
+ln -sf "${BIN_DIR}/kDrive" /usr/bin/kdrive
+ln -sf "${BIN_DIR}/kDrive_client" /usr/bin/kdrive-client
+echo "  Created symlinks in /usr/bin"
+
+# -----------------------------------------------------------------------------
+# Set proper permissions on libraries
+# -----------------------------------------------------------------------------
+if [ -d "${KDRIVE_DIR}/lib" ]; then
+    chmod 755 "${KDRIVE_DIR}/lib"/*.so* 2>/dev/null || true
+fi
+
+if [ -d "${KDRIVE_DIR}/plugins" ]; then
+    find "${KDRIVE_DIR}/plugins" -name "*.so*" -exec chmod 755 {} \; 2>/dev/null || true
+fi
+
+# -----------------------------------------------------------------------------
+# Update system caches
+# -----------------------------------------------------------------------------
+
+# Update icon cache
+if command -v gtk-update-icon-cache &> /dev/null; then
+    gtk-update-icon-cache -f -t /usr/share/icons/hicolor 2>/dev/null || true
+    echo "  Updated icon cache"
+fi
+
+# Update desktop database
+if command -v update-desktop-database &> /dev/null; then
+    update-desktop-database /usr/share/applications 2>/dev/null || true
+    echo "  Updated desktop database"
+fi
+
+# Update shared library cache (for system libs, not needed for bundled)
+ldconfig 2>/dev/null || true
+
+echo ""
+echo "kDrive installed successfully!"
+echo ""
+echo "To start kDrive:"
+echo "  - From the application menu: search for 'kDrive'"
+echo "  - From terminal: kdrive-client"
+echo ""
+
+exit 0

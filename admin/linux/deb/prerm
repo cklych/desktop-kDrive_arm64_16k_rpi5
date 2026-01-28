@@ -1,0 +1,20 @@
+#!/bin/bash
+# kDrive pre-removal script
+set -e
+
+# Stop kDrive processes gracefully if running
+if pgrep -x "kDrive" > /dev/null || pgrep -x "kDrive.bin" > /dev/null; then
+    echo "Stopping kDrive services..."
+    pkill -x "kDrive" 2>/dev/null || true
+    pkill -x "kDrive.bin" 2>/dev/null || true
+    sleep 1
+fi
+
+if pgrep -x "kDrive_client" > /dev/null || pgrep -x "kDrive_client.bin" > /dev/null; then
+    echo "Stopping kDrive client..."
+    pkill -x "kDrive_client" 2>/dev/null || true
+    pkill -x "kDrive_client.bin" 2>/dev/null || true
+    sleep 1
+fi
+
+exit 0
