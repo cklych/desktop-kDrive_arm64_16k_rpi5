@@ -6,7 +6,7 @@ endif()
 
 find_package(Qt6 REQUIRED COMPONENTS Network Widgets Gui Sql)
 find_package(Poco 1.13.3 REQUIRED Foundation JSON Util)
-find_package(log4cplus 2.1.2 REQUIRED)
+find_package(log4cplus 2.1.1 REQUIRED)
 find_package(sentry REQUIRED)
 
 if(UNIX AND CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo")
@@ -32,6 +32,8 @@ set(libcommon_SRCS
     utility/urlhelper.h utility/urlhelper.cpp
     utility/timerutility.h
     keychainmanager/apitoken.h keychainmanager/apitoken.cpp
+    keychainmanager/ikeychainstore.h
+    keychainmanager/keychainstore.h keychainmanager/keychainstore.cpp
     keychainmanager/keychainmanager.h keychainmanager/keychainmanager.cpp
     info/userinfo.h info/userinfo.cpp
     info/accountinfo.h info/accountinfo.cpp
