@@ -17,7 +17,7 @@
  */
 
 #include "accountinfo.h"
-#include "utility/utility.h"
+#include "libcommon/utility/utility.h"
 
 static const auto accountInfoDbId = "dbId";
 static const auto accountInfoUserDbId = "userDbId";
