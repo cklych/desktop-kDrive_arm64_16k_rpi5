@@ -28,7 +28,7 @@
 
 namespace KDC {
 
-Theme *Theme::_instance = 0;
+Theme *Theme::_instance = nullptr;
 
 Theme *Theme::instance() {
     if (!_instance) {
@@ -127,8 +127,7 @@ void Theme::updateIconWithText(QIcon &icon, QString text) const {
 }
 
 Theme::Theme() :
-    QObject(0),
-    _mono(false) {}
+    QObject(nullptr) {}
 
 QString Theme::helpUrl() const {
 #ifdef APPLICATION_HELP_URL
