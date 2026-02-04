@@ -22,6 +22,7 @@
 #include "network/proxy.h"
 #include "propagation/executor/filerescuer.h"
 
+#include "mocks/libcommon/keychainmanager/mockkeychainstore.h"
 #include "mocks/libcommonserver/db/mockdb.h"
 #include "test_classes/testsituationgenerator.h"
 #include "test_utility/testhelpers.h"
@@ -36,8 +37,9 @@ void TestFileRescuer::setUp() {
 
     // Insert api token into keystore
     std::string keychainKey("123");
-    (void) KeyChainManager::instance(true);
-    KeyChainManager::instance()->writeToken(keychainKey, testVariables.apiToken);
+    auto mockStore = std::make_unique<MockKeychainStore>();
+    KeyChainManager manager(std::move(mockStore));
+    (void) manager.writeToken(keychainKey, testVariables.apiToken);
 
     // Create parmsDb
     (void) ParmsDb::instance(_localTempDir.path() / MockDb::makeDbMockFileName(), KDRIVE_VERSION_STRING, true, true);

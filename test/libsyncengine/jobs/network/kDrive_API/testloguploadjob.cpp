@@ -19,6 +19,7 @@
 #include "libcommon/keychainmanager/keychainmanager.h"
 #include "libcommonserver/utility/utility.h"
 #include "mocks/libsyncengine/jobs/network/API_v2/mockloguploadjob.h"
+#include "mocks/libcommon/keychainmanager/mockkeychainstore.h"
 #include "mocks/libcommonserver/db/mockdb.h"
 
 #include "test_utility/testhelpers.h"
@@ -247,8 +248,9 @@ void TestLogUploadJob::insertUserInDb() {
 
     // Insert user, account & drive
     const std::string keychainKey("123");
-    (void) KeyChainManager::instance(true);
-    (void) KeyChainManager::instance()->writeToken(keychainKey, apiToken.reconstructJsonString());
+    auto mockStore = std::make_unique<MockKeychainStore>();
+    KeyChainManagerSingleton::setStore(std::move(mockStore));
+    (void) KeyChainManagerSingleton::instance()->writeToken(keychainKey, apiToken.reconstructJsonString());
 
     const int userId(atoi(testVariables.userId.c_str()));
     User user(1, userId, keychainKey);

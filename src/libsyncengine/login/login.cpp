@@ -36,7 +36,7 @@ Login::Login(const std::string &keychainKey) :
     _logger(Log::instance()->getLogger()),
     _keychainKey(keychainKey) {
     bool found = false;
-    if (!KeyChainManager::instance()->readApiToken(_keychainKey, _apiToken, found)) {
+    if (!KeyChainManagerSingleton::instance()->readApiToken(_keychainKey, _apiToken, found)) {
         LOG_WARN(_logger, "Failed to read authentification token from keychain");
     }
     if (!found) {
@@ -76,7 +76,7 @@ ExitInfo Login::requestToken(const std::string &authorizationCode, const std::st
     }
 
     LOG_DEBUG(_logger, "KeyChainManager.writeToken");
-    if (!KeyChainManager::instance()->writeToken(_keychainKey, _apiToken.rawData())) {
+    if (!KeyChainManagerSingleton::instance()->writeToken(_keychainKey, _apiToken.rawData())) {
         LOG_WARN(_logger, "Failed to write authentification token into keychain");
         _error = std::string("Failed to write authentification token into keychain");
         _errorDescr = std::string();
@@ -120,7 +120,7 @@ ExitCode Login::refreshToken(const std::string &keychainKey, ApiToken &apiToken,
 
     LOG_DEBUG(Log::instance()->getLogger(), "Start token refresh request");
 
-    if (!KeyChainManager::instance()->writeDummyTest()) {
+    if (!KeyChainManagerSingleton::instance()->writeDummyTest()) {
         error = "Test writing into the keychain failed. Token not refreshed.";
         return ExitCode::SystemError;
     }
@@ -152,7 +152,7 @@ ExitCode Login::refreshToken(const std::string &keychainKey, ApiToken &apiToken,
 
     LOG_DEBUG(Log::instance()->getLogger(), "Token successfully refreshed");
 
-    if (!KeyChainManager::instance()->writeToken(keychainKey, apiToken.rawData())) {
+    if (!KeyChainManagerSingleton::instance()->writeToken(keychainKey, apiToken.rawData())) {
         LOG_WARN(Log::instance()->getLogger(), "Failed to write authentication token into keychain");
         error = std::string("Failed to write authentication token into keychain");
         errorDescr = std::string();
@@ -161,7 +161,7 @@ ExitCode Login::refreshToken(const std::string &keychainKey, ApiToken &apiToken,
 
     LOG_DEBUG(Log::instance()->getLogger(), "Token successfully written in keychain");
 
-    KeyChainManager::instance()->clearDummyTest();
+    KeyChainManagerSingleton::instance()->clearDummyTest();
 
     LOG_DEBUG(Log::instance()->getLogger(), "Dummy test cleared");
 

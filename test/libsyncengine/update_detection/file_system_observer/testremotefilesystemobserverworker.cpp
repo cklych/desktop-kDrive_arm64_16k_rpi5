@@ -28,6 +28,7 @@
 #include "libsyncengine/jobs/network/kDrive_API/renamejob.h"
 #include "libsyncengine/jobs/network/kDrive_API/upload/uploadjob.h"
 #include "libsyncengine/jobs/network/networkjobsparams.h"
+#include "mocks/libcommon/keychainmanager/mockkeychainstore.h"
 #include "mocks/libcommonserver/db/mockdb.h"
 
 #include "test_utility/localtemporarydirectory.h"
@@ -35,7 +36,6 @@
 #include "test_utility/testhelpers.h"
 
 #include <memory>
-
 using namespace CppUnit;
 using namespace std::literals;
 
@@ -62,8 +62,9 @@ void TestRemoteFileSystemObserverWorker::setUp() {
     apiToken.setAccessToken(testVariables.apiToken);
 
     std::string keychainKey("123");
-    (void) KeyChainManager::instance(true);
-    (void) KeyChainManager::instance()->writeToken(keychainKey, apiToken.reconstructJsonString());
+    auto mockStore = std::make_unique<MockKeychainStore>();
+    KeyChainManagerSingleton::setStore(std::move(mockStore));
+    (void) KeyChainManagerSingleton::instance()->writeToken(keychainKey, apiToken.reconstructJsonString());
 
     // Create parmsDb
     (void) ParmsDb::instance(_localTempDir.path() / MockDb::makeDbMockFileName(), KDRIVE_VERSION_STRING, true, true);

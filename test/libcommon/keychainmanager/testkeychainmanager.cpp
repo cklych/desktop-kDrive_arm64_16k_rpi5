@@ -17,9 +17,11 @@
  */
 
 #include "testkeychainmanager.h"
+#include "mocks/libcommon/keychainmanager/mockkeychainstore.h"
+
 #include "libcommon/keychainmanager/keychainmanager.h"
 #include "libcommon/keychainmanager/keychainstore.h"
-#include "mockkeychainstore.h"
+
 
 namespace KDC {
 
