@@ -32,7 +32,6 @@ set(libcommon_SRCS
     utility/urlhelper.h utility/urlhelper.cpp
     utility/timerutility.h
     keychainmanager/apitoken.h keychainmanager/apitoken.cpp
-    keychainmanager/ikeychainstore.h
     keychainmanager/keychainstore.h keychainmanager/keychainstore.cpp
     keychainmanager/keychainmanager.h keychainmanager/keychainmanager.cpp
     info/userinfo.h info/userinfo.cpp
@@ -174,3 +173,5 @@ if(ZLIB_FOUND)
     target_link_libraries("${libcommon_NAME}"
         ZLIB::ZLIB)
 endif(ZLIB_FOUND)
+
+
