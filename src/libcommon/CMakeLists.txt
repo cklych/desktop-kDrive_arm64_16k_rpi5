@@ -32,6 +32,7 @@ set(libcommon_SRCS
     utility/urlhelper.h utility/urlhelper.cpp
     utility/timerutility.h
     keychainmanager/apitoken.h keychainmanager/apitoken.cpp
+    keychainmanager/ikeychainstore.h
     keychainmanager/keychainstore.h keychainmanager/keychainstore.cpp
     keychainmanager/keychainmanager.h keychainmanager/keychainmanager.cpp
     info/userinfo.h info/userinfo.cpp
