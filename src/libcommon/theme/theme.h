@@ -69,6 +69,7 @@ class Theme : public QObject {
 
     private:
         Theme(Theme const &);
+        QString getFlavor(const bool systray) const;
 
         static Theme *_instance;
         bool _mono{false};
