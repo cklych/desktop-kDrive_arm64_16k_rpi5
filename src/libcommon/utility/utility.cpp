@@ -1155,7 +1155,7 @@ void CommonUtility::clearSignalFile(const AppType appType, const SignalCategory 
 
 #ifdef KD_MACOS
 bool CommonUtility::isLiteSyncExtEnabled() {
-    QProcess *process = new QProcess();
+    std::unique_ptr<QProcess> process = std::make_unique<QProcess>();
     process->start("bash", QStringList() << "-c"
                                          << QString("systemextensionsctl list | grep %1 | grep enabled | wc -l")
                                                     .arg(liteSyncExtBundleIdStr.data()));
