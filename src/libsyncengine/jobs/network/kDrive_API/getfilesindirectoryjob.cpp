@@ -97,7 +97,7 @@ ExitInfo GetFilesInDirectoryJob::deserializeDataArray() {
         SyncName name;
         if (!Utility::normalizedSyncName(rawName, name)) {
             LOGW_DEBUG(Log::instance()->getLogger(),
-                       L"Error in Utility::normalizedSyncName: " << CommonUtility::formatSyncName(rawName));
+                       L"Error in Utility::normalizedSyncName: " << Utility::formatSyncName(rawName));
             // Ignore the item
             continue;
         }
@@ -111,7 +111,7 @@ ExitInfo GetFilesInDirectoryJob::deserializeDataArray() {
 
             if (!Utility::normalizedSyncName(rawPath, path)) {
                 LOGW_DEBUG(Log::instance()->getLogger(),
-                           L"Error in Utility::normalizedSyncName: " << CommonUtility::formatSyncName(rawPath));
+                           L"Error in Utility::normalizedSyncName: " << Utility::formatSyncName(rawPath));
                 // Ignore the item
                 continue;
             }
