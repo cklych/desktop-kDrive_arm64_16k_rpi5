@@ -28,11 +28,12 @@ endif()
 
 # utf8proc
 if(UNIX)
+    set(UTF8PROC_INSTALL OFF CACHE BOOL "" FORCE)
     add_subdirectory(src/3rdparty/utf8proc)
 endif()
 
 # keychain
-add_subdirectory(src/3rdparty/keychain)
+add_subdirectory(src/3rdparty/keychain EXCLUDE_FROM_ALL)
 
 #####
 
@@ -93,6 +94,14 @@ include_directories(
 
 include(GNUInstallDirs)
 include(GenerateExportHeader)
+
+if(NOT DEFINED SYSCONFDIR)
+    if(CMAKE_INSTALL_PREFIX STREQUAL "/usr")
+        set(SYSCONFDIR "/etc")
+    else()
+        set(SYSCONFDIR "${CMAKE_INSTALL_FULL_SYSCONFDIR}")
+    endif()
+endif()
 
 add_definitions(
         -DQT_USE_QSTRINGBUILDER
@@ -302,6 +311,8 @@ elseif(BUILD_CLIENT)
             file(RENAME ${CMAKE_BINARY_DIR}/bin/sync-exclude-linux.lst ${CMAKE_BINARY_DIR}/bin/sync-exclude.lst)
         else()
             install(FILES sync-exclude-linux.lst DESTINATION ${SYSCONFDIR}/${APPLICATION_SHORTNAME} RENAME sync-exclude.lst)
+            # Also install next to the binary (the server looks for it relative to argv[0])
+            install(FILES sync-exclude-linux.lst DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME sync-exclude.lst)
         endif()
 
         # Sentry
@@ -347,3 +358,6 @@ if(UNIX AND NOT APPLE)
             FILE_PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ)
     endif()
 endif()
+
+# CPack configuration for .deb packaging (Linux only)
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/CPackConfig.cmake")
