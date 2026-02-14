@@ -1,0 +1,45 @@
+{
+    "version": 3,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 21
+    },
+    "configurePresets": [
+        {
+            "name": "raspbian-arm64",
+            "displayName": "Raspbian ARM64 (16k pages)",
+            "description": "Build for Raspberry Pi 5 / Raspbian with 16k page kernel using system libraries",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-raspbian",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "KDRIVE_THEME_DIR": "${sourceDir}/infomaniak",
+                "BUILD_UNIT_TESTS": "OFF",
+                "BUILD_EXTENSIONS": "OFF",
+                "KDRIVE_USE_SYSTEM_LIBS": "ON"
+            }
+        },
+        {
+            "name": "raspbian-arm64-debug",
+            "displayName": "Raspbian ARM64 Debug (16k pages)",
+            "description": "Debug build for Raspberry Pi 5 / Raspbian with 16k page kernel",
+            "inherits": "raspbian-arm64",
+            "binaryDir": "${sourceDir}/build-raspbian-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "raspbian-arm64",
+            "configurePreset": "raspbian-arm64",
+            "jobs": 4
+        },
+        {
+            "name": "raspbian-arm64-debug",
+            "configurePreset": "raspbian-arm64-debug",
+            "jobs": 4
+        }
+    ]
+}

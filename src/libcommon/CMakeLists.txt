@@ -11,7 +11,11 @@ find_package(sentry REQUIRED)
 
 if(UNIX AND CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo")
     # Use fallback library types for imported dependencies
-    set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO RelWithDebInfo NoConfig)
+    if(KDRIVE_USE_SYSTEM_LIBS)
+        set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO RelWithDebInfo Release None NoConfig "")
+    else()
+        set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO RelWithDebInfo NoConfig)
+    endif()
 endif()
 find_package(libzip 1.10.1 REQUIRED)
 

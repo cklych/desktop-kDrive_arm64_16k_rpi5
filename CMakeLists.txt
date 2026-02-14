@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(CMAKE_CXX_STANDARD 20)
+
+option(KDRIVE_USE_SYSTEM_LIBS "Use system-installed libraries instead of Conan (for Raspbian ARM64 16k pages)" OFF)
+if(KDRIVE_USE_SYSTEM_LIBS)
+    include("${CMAKE_CURRENT_LIST_DIR}/cmake/raspbian-system-libs.cmake")
+endif()
+
 project(client)
 if(APPLE)
     enable_language(OBJC)
@@ -32,7 +38,11 @@ add_subdirectory(src/3rdparty/keychain)
 
 if(CMAKE_BUILD_TYPE MATCHES "RelWithDebInfo")
     # Use fallback library types for imported dependencies
-    set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO "RelWithDebInfo;Release;")
+    if(KDRIVE_USE_SYSTEM_LIBS)
+        set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO "RelWithDebInfo;Release;None;NoConfig;")
+    else()
+        set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO "RelWithDebInfo;Release;")
+    endif()
 endif()
 
 if(APPLE)

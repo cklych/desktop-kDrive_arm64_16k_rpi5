@@ -1,3 +1,4 @@
+import os
 import textwrap
 
 from conan import ConanFile
@@ -47,6 +48,12 @@ class KDriveDesktop(ConanFile):
         - `log4cplus/2.1.2`: A C++ logging library.
         :return: None
         """
+        # When KDRIVE_USE_SYSTEM_LIBS is set (e.g. Raspbian ARM64 with 16k page kernel),
+        # skip Conan-managed dependencies and use system-installed packages instead.
+        if os.environ.get("KDRIVE_USE_SYSTEM_LIBS", "") == "1":
+            self.output.info("KDRIVE_USE_SYSTEM_LIBS=1: skipping Conan dependencies, using system libraries.")
+            return
+
         self.requires("xxhash/0.8.2") # From local recipe
         # log4cplus
         log4cplus_options = { "shared": True, "unicode": True }
