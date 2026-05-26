@@ -198,3 +198,5 @@ cmake-build-debug*
 
 # Allow Cascade/Windsurf to access build-tools
 !/infomaniak-build-tools/
+# Xcode
+DerivedData/
